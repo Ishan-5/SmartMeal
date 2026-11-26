@@ -24,6 +24,7 @@ export function SiteFooter() {
             <Link href="/#how-it-works" className="text-sm text-muted hover:text-moss">How it works</Link>
             <Link href="/#features" className="text-sm text-muted hover:text-moss">Features</Link>
             <Link href="/#our-story" className="text-sm text-muted hover:text-moss">Our story</Link>
+            <Link href="/#faq" className="text-sm text-muted hover:text-moss">FAQ</Link>
             <Link href="/app" className="text-sm text-muted hover:text-moss">Try the demo</Link>
           </div>
         </div>
@@ -39,7 +40,11 @@ export function SiteFooter() {
       <div className="border-t border-moss/10">
         <div className="shell flex flex-col gap-2 py-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
           <span>© 2026 SmartMeal. All rights reserved.</span>
-          <span>Built for real kitchens, real schedules.</span>
+          <span className="flex flex-wrap gap-4">
+            <Link href="/privacy" className="hover:text-moss">Privacy</Link>
+            <Link href="/terms" className="hover:text-moss">Terms</Link>
+            <span>Built for real kitchens, real schedules.</span>
+          </span>
         </div>
       </div>
     </footer>

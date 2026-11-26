@@ -79,10 +79,10 @@ const features = [
     meta: "Only buy the gaps",
   },
   {
-    title: "Learns your portions",
-    description: "The more you cook, the better SmartMeal understands what your household finishes.",
+    title: "Household-aware portions",
+    description: "Small, regular or large — every quantity is scaled to the people actually eating.",
     icon: Sparkles,
-    meta: "Improves with every plan",
+    meta: "Exact servings, every time",
   },
 ];
 
@@ -91,7 +91,7 @@ export default function Home() {
     <>
       <SiteHeader />
 
-      <main>
+      <main id="main-content">
         {/* Hero */}
         <section className="relative overflow-hidden">
           <div className="pointer-events-none absolute inset-0 grain opacity-60" />
@@ -101,10 +101,10 @@ export default function Home() {
               <p className="eyebrow">
                 <Sparkles className="h-3.5 w-3.5" /> SmartMeal · your AI kitchen assistant
               </p>
-              <h1 className="mt-7 font-serif text-[2.85rem] leading-[1.05] tracking-tight text-ink sm:text-6xl lg:text-[4.35rem]">
+              <h1 className="mt-7 font-serif text-[2.45rem] leading-[1.05] tracking-tight text-ink sm:text-6xl lg:text-[4.35rem]">
                 Snap your ingredients. Get a week of{" "}
-                <span className="relative whitespace-nowrap text-moss">
-                  diet plan.
+                <span className="relative text-moss sm:whitespace-nowrap">
+                  meal plans.
                   <svg className="absolute -bottom-2 left-0 w-full" height="12" viewBox="0 0 240 12" fill="none" preserveAspectRatio="none" aria-hidden="true">
                     <path d="M3 9C60 3 160 3 237 7" stroke="#8CA898" strokeWidth="5" strokeLinecap="round" />
                   </svg>
@@ -114,13 +114,14 @@ export default function Home() {
                 Turn a quick photo of your fridge, pantry, or grocery haul into a personalized plan that fits your people, portions, and real-life schedule.
               </p>
               <div className="mt-9 flex flex-wrap items-center gap-3">
-                <Link href="#waitlist" className="btn-primary">
-                  Join the Waitlist <ArrowRight className="h-4 w-4" />
+                <Link href="/app" className="btn-primary">
+                  Try SmartMeal free <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link href="/app" className="btn-outline">
-                  Try the demo <ArrowRight className="h-4 w-4" />
+                <Link href="#waitlist" className="btn-outline">
+                  Join the waitlist <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
+              <p className="mt-4 text-xs font-medium text-muted">No card. No sign-up needed to try the full flow.</p>
               <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs font-medium text-muted">
                 <span className="flex items-center gap-2"><Check className="h-4 w-4 text-moss" /> No typing ingredients</span>
                 <span className="flex items-center gap-2"><Check className="h-4 w-4 text-moss" /> No food waste</span>
@@ -132,11 +133,11 @@ export default function Home() {
             <div className="relative mx-auto w-full max-w-[560px] animate-fade-up [animation-delay:120ms]">
               <div className="panel overflow-hidden p-3 sm:p-4">
                 <div className="relative overflow-hidden rounded-[26px] bg-mint">
-                  <img src="/images/hero-kitchen.svg" alt="Fresh vegetables, eggs, grains and pantry ingredients on a kitchen counter" className="block w-full" />
+                  <img src="/images/hero-kitchen.svg" alt="Fresh vegetables, eggs, grains and pantry ingredients on a kitchen counter" width={640} height={560} className="block h-auto w-full" />
                 </div>
               </div>
 
-              <div className="absolute -left-1 top-5 w-[184px] rounded-2xl border border-moss/10 bg-paper/95 p-3 shadow-soft backdrop-blur sm:-left-8 sm:top-10 sm:w-[210px]">
+              <div className="absolute left-2 top-3 w-[164px] rounded-2xl border border-moss/10 bg-paper/95 p-3 shadow-soft backdrop-blur sm:-left-8 sm:top-10 sm:w-[210px]">
                 <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-moss">
                   <ScanLine className="h-3.5 w-3.5" /> Recognized
                 </p>
@@ -147,7 +148,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="absolute -bottom-8 -right-1 w-[248px] rounded-3xl border border-moss/10 bg-paper p-4 shadow-soft sm:-right-8 sm:w-[286px]">
+              <div className="absolute bottom-2 right-2 w-[214px] rounded-3xl border border-moss/10 bg-paper p-4 shadow-soft sm:-bottom-8 sm:-right-8 sm:w-[286px]">
                 <div className="flex items-center justify-between">
                   <p className="font-serif text-lg text-ink">This week</p>
                   <span className="rounded-full bg-mint px-2 py-1 text-[10px] font-semibold text-moss">Protein-forward</span>
@@ -303,6 +304,49 @@ export default function Home() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section id="faq" className="scroll-mt-24 bg-paper/70 py-20 lg:py-24">
+          <div className="shell grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+            <div>
+              <p className="eyebrow">04 / Good to know</p>
+              <h2 className="section-title mt-5">A few quick answers.</h2>
+              <p className="muted-text mt-5 text-sm">Everything you need to decide if SmartMeal fits your kitchen.</p>
+            </div>
+            <div className="divide-y divide-moss/10 rounded-4xl border border-moss/10 bg-paper px-6 shadow-card sm:px-8">
+              {[
+                {
+                  q: "Is SmartMeal really free?",
+                  a: "Yes. You can use the full scan → plan → shopping list flow for free, without an account. An account is optional and lets you save plans for later.",
+                },
+                {
+                  q: "Do I need to type in every ingredient?",
+                  a: "No. Upload a photo of your fridge or pantry and the AI reads what it can see. You can edit, add or remove anything before planning — and there is a sample fridge if you just want to look around.",
+                },
+                {
+                  q: "What if the AI gets something wrong?",
+                  a: "Every recognised item is editable. If a service is unavailable, SmartMeal automatically falls back to its local planning engine, so the app keeps working instead of showing an error.",
+                },
+                {
+                  q: "Why am I still buying some ingredients?",
+                  a: "A plan can only use what you have. If you have vegetables but no protein source, the shopping list includes the missing protein. Quantities are calculated from your household size and portion setting — you only buy the gaps.",
+                },
+                {
+                  q: "Are my photos stored?",
+                  a: "No. Photos are resized in your browser, sent to the AI provider for recognition, and never written to our database. Saved plans store ingredients and settings, not the image itself.",
+                },
+              ].map((item) => (
+                <details key={item.q} className="group py-5">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold text-ink marker:hidden">
+                    {item.q}
+                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-mint text-moss transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+                  </summary>
+                  <p className="muted-text mt-3 pr-8 text-sm">{item.a}</p>
+                </details>
+              ))}
             </div>
           </div>
         </section>
