@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-cream text-ink antialiased;
+    font-feature-settings: "ss01", "cv01";
+  }
+
+  ::selection {
+    background: #cfe0d3;
+    color: #1f3029;
+  }
+
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+}
+
+@layer components {
+  .shell {
+    @apply mx-auto w-full max-w-[1200px] px-5 sm:px-8;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-moss/15 bg-mint/60 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-moss;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-moss/40 focus-visible:ring-offset-2;
+  }
+
+  .btn-primary {
+    @apply btn bg-moss text-paper shadow-card hover:-translate-y-0.5 hover:bg-[#1C3B2D] hover:shadow-soft;
+  }
+
+  .btn-light {
+    @apply btn bg-paper text-moss hover:-translate-y-0.5 hover:bg-white;
+  }
+
+  .btn-outline {
+    @apply btn border border-moss/20 bg-transparent text-moss hover:border-moss/50 hover:bg-mint/40;
+  }
+
+  .panel {
+    @apply rounded-4xl border border-moss/10 bg-paper shadow-card;
+  }
+
+  .input {
+    @apply w-full rounded-2xl border border-moss/15 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/70 focus:border-moss/50 focus:outline-none focus:ring-4 focus:ring-mint/40;
+  }
+
+  .field-label {
+    @apply mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-muted;
+  }
+
+  .section-title {
+    @apply font-serif text-3xl leading-tight tracking-tight text-ink sm:text-4xl lg:text-[2.75rem];
+  }
+
+  .muted-text {
+    @apply text-[15px] leading-relaxed text-muted;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .grain {
+    background-image: radial-gradient(rgba(31, 48, 41, 0.055) 1px, transparent 1px);
+    background-size: 12px 12px;
+  }
+}
