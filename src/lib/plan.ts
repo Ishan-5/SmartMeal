@@ -1,4 +1,5 @@
 import { RECIPES } from "./demo-data";
+import { youtubeSearchUrl } from "./utils";
 import type {
   GroceryItem,
   Household,
@@ -127,9 +128,18 @@ export function assemblePlan(
   inventory: Ingredient[],
   household: Household,
 ): MealPlan {
+  // Every meal gets a video link: an exact URL from the AI if it supplied one,
+  // otherwise a YouTube search for that dish.
+  const linkedMeals = meals.map((meal) => ({
+    ...meal,
+    recipe: {
+      ...meal.recipe,
+      videoUrl: meal.recipe.videoUrl || youtubeSearchUrl(meal.recipe.name),
+    },
+  }));
   const totals = new Map<string, { name: string; unit: string; need: number }>();
 
-  for (const meal of meals) {
+  for (const meal of linkedMeals) {
     for (const item of meal.recipe.ingredients) {
       const key = `${normaliseName(item.name)}|${item.unit}`;
       const existing = totals.get(key);
@@ -162,7 +172,7 @@ export function assemblePlan(
     : 0;
 
   return {
-    days: meals,
+    days: linkedMeals,
     groceries,
     usedIngredients: inventory.map((i) => i.name),
     summary: {
