@@ -19,6 +19,12 @@ const openaiModel = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
 const providers: AiProvider[] = ["groq", "openrouter", "gemini", "openai"];
 
+// A slow free provider must not hold a serverless request open until it times out.
+const groqTimeout = Number(process.env.AI_TIMEOUT_MS) || 20_000;
+const openRouterTimeout = Number(process.env.AI_SCAN_TIMEOUT_MS) || 25_000;
+const geminiTimeout = Number(process.env.AI_TIMEOUT_MS) || 15_000;
+const openAiTimeout = Number(process.env.AI_TIMEOUT_MS) || 20_000;
+
 function keyFor(provider: AiProvider): string | undefined {
   if (provider === "groq") return groqKey;
   if (provider === "openrouter") return openrouterKey;
@@ -80,6 +86,7 @@ async function askGroq(system: string, prompt: string, image?: ImageInput): Prom
   if (image) throw new Error("Groq provider does not accept images");
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
+    signal: AbortSignal.timeout(groqTimeout),
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${groqKey}`,
@@ -115,6 +122,7 @@ async function askOpenRouter(system: string, prompt: string, image?: ImageInput)
     try {
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
+        signal: AbortSignal.timeout(openRouterTimeout),
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${openrouterKey}`,
@@ -142,6 +150,8 @@ async function askOpenRouter(system: string, prompt: string, image?: ImageInput)
     } catch (error) {
       lastError = error;
       console.warn(`[SmartMeal] OpenRouter model ${model} failed, trying backup:`, error);
+      // Bad keys/models will fail the same way again; skip the second request.
+      if (/\((400|401|403|404)\)/.test(String(error))) break;
     }
   }
 
@@ -157,6 +167,7 @@ async function askGemini(system: string, prompt: string, image?: ImageInput): Pr
     `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${encodeURIComponent(geminiKey ?? "")}`,
     {
       method: "POST",
+      signal: AbortSignal.timeout(geminiTimeout),
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
@@ -182,6 +193,7 @@ async function askOpenAI(system: string, prompt: string, image?: ImageInput): Pr
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
+    signal: AbortSignal.timeout(openAiTimeout),
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${openaiKey}`,
