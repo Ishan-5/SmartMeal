@@ -171,7 +171,7 @@ See `.env.example` for a copyable template. Everything is optional locally; Supa
 | `GROQ_API_KEY` | Free fast text key for planning |
 | `GROQ_MODEL` | Plan model; default `openai/gpt-oss-120b` |
 | `AI_SCAN_PROVIDER`, `AI_PLAN_PROVIDER` | Force a provider: `groq`, `openrouter`, `gemini`, `openai`, `demo` |
-| `AI_TIMEOUT_MS`, `AI_SCAN_TIMEOUT_MS` | Optional provider timeouts in milliseconds; defaults are 20s/25s |
+| `AI_TIMEOUT_MS`, `AI_SCAN_TIMEOUT_MS` | Optional provider timeouts in milliseconds; defaults are 12s/18s |
 | `GEMINI_API_KEY` / `GOOGLE_API_KEY` | Optional Gemini fallback |
 | `GEMINI_MODEL` | Optional Gemini model override |
 | `OPENAI_API_KEY`, `OPENAI_MODEL`, `AI_PROVIDER=openai` | Optional paid fallback; not needed for free setup |
