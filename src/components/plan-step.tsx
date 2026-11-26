@@ -12,6 +12,7 @@ import {
   ShoppingBasket,
   Sparkles,
   Utensils,
+  Youtube,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -19,7 +20,7 @@ import { useState } from "react";
 import { formatQuantity } from "@/lib/plan";
 import type { GroceryItem, Household, MealPlan } from "@/lib/types";
 import type { AiMode } from "@/lib/ai";
-import { cn } from "@/lib/utils";
+import { cn, youtubeSearchUrl } from "@/lib/utils";
 
 interface Props {
   plan: MealPlan;
@@ -165,6 +166,14 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
                       </span>
                     ))}
                   </div>
+                  <a
+                    href={meal.recipe.videoUrl ?? youtubeSearchUrl(meal.recipe.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center gap-2 rounded-full border border-moss/15 bg-paper px-3 py-1.5 text-xs font-medium text-moss transition-colors hover:bg-mint"
+                  >
+                    <Youtube className="h-3.5 w-3.5" /> Watch this recipe on YouTube
+                  </a>
                 </div>
               )}
             </article>
