@@ -301,20 +301,51 @@ export async function generatePlan(
 ): Promise<{ plan: MealPlan; mode: AiMode; note?: string }> {
   if (!configured(getPlanProvider())) return { plan: buildPlan(inventory, household), mode: "demo" };
 
-  try {
-    const raw = await askChain(
-      [getPlanProvider(), "groq", "openrouter", "gemini", "openai"],
-      "You are a practical home cook planning real household dinners. Reply with JSON only, no markdown: {\"days\":[{\"day\":\"Mon\",\"name\":\"Lemon chicken bowls\",\"protein\":42,\"minutes\":25,\"emoji\":\"🍋\",\"tags\":[\"High protein\"],\"videoUrl\":\"\",\"ingredients\":[{\"name\":\"Chicken breast\",\"quantity\":180,\"unit\":\"g\"}],\"steps\":[\"Cook the rice\",\"Sear the chicken\"]}]}. Ingredient quantities are PER SERVING. Use only units g, pcs, tbsp or ml. Create exactly the requested number of days, Monday onwards. Make every meal protein-forward and realistic. Prefer the available ingredients before adding new ones. Include one short emoji and 2-4 short steps per meal. Leave videoUrl empty unless you know a real YouTube URL.",
-      JSON.stringify({
-        available: inventory,
-        people: household.people,
-        portions: household.portions,
-        days: household.days,
-        focus: household.focus,
-      }),
-    );
+  const focusRule =
+    household.focus === "protein"
+      ? "FOCUS: protein-first. EVERY meal must have 28-45g protein. Never return a meal below 28g."
+      : household.focus === "quick"
+        ? "FOCUS: quick. EVERY meal must take under 20 minutes."
+        : "FOCUS: balanced. Mix protein, vegetables and grains across the week.";
 
-    const parsed = parseJson(raw);
+  const system = [
+    "You are a practical home cook planning real household dinners.",
+    "Reply with JSON only, no markdown: {\"days\":[{\"day\":\"Mon\",\"name\":\"Lemon chicken bowls\",\"protein\":42,\"minutes\":25,\"emoji\":\"🍋\",\"tags\":[\"High protein\"],\"videoUrl\":\"\",\"ingredients\":[{\"name\":\"Chicken breast\",\"quantity\":180,\"unit\":\"g\"}],\"steps\":[\"Cook the rice\",\"Sear the chicken\"]}]}.",
+    "Ingredient quantities are PER SERVING. Use only units g, pcs, tbsp or ml.",
+    "Create exactly the requested number of days, Monday onwards.",
+    "Use at least 2 available ingredients in every meal. Add at most 3 new ingredients per meal, and only for protein or a staple you cannot skip.",
+    focusRule,
+    "Include one short emoji and 2-4 short steps per meal. Leave videoUrl empty unless you know a real YouTube URL.",
+  ].join(" ");
+
+  const payload = {
+    available: inventory,
+    people: household.people,
+    portions: household.portions,
+    days: household.days,
+    focus: household.focus,
+  };
+  const chain: AiProvider[] = [getPlanProvider(), "groq", "openrouter", "gemini", "openai"];
+  const hasLowProtein = (value: Record<string, unknown>) =>
+    Array.isArray(value.days) &&
+    value.days.some((entry) => Number((entry as Record<string, unknown>).protein) < 28);
+
+  try {
+    let parsed = parseJson(await askChain(chain, system, JSON.stringify(payload)));
+    let correctionNote: string | undefined;
+
+    // Protein-first means 28-45g, so give the model one strict second chance.
+    if (household.focus === "protein" && hasLowProtein(parsed)) {
+      parsed = parseJson(
+        await askChain(
+          chain,
+          `${system} CORRECTION: the previous plan had meals below 28g protein. Return the same number of days with every meal at 28-45g protein.`,
+          JSON.stringify({ ...payload, correction: "Every meal must be 28-45g protein." }),
+        ),
+      );
+      if (hasLowProtein(parsed)) correctionNote = "Some meals could not reach 28g protein with these ingredients.";
+    }
+
     if (!Array.isArray(parsed.days) || !parsed.days.length) throw new Error("No days returned");
 
     const meals: PlannedMeal[] = parsed.days.slice(0, 7).map((entry, index) => {
@@ -341,7 +372,7 @@ export async function generatePlan(
       };
     });
 
-    return { plan: assemblePlan(meals, inventory, household), mode: "ai" };
+    return { plan: assemblePlan(meals, inventory, household), mode: "ai", note: correctionNote };
   } catch (error) {
     console.warn("[SmartMeal] planning fell back to local engine:", error);
     return {
