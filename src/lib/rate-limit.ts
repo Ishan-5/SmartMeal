@@ -3,10 +3,21 @@ interface Bucket {
 }
 
 const buckets = new Map<string, Bucket>();
+let lastCleanup = 0;
 
-/** Simple in-process limiter to protect a free AI key from runaway usage. */
+function cleanup(now: number, windowMs: number): void {
+  if (now - lastCleanup < 60_000) return;
+  lastCleanup = now;
+  for (const [key, bucket] of buckets) {
+    bucket.hits = bucket.hits.filter((time) => time > now - windowMs);
+    if (!bucket.hits.length) buckets.delete(key);
+  }
+}
+
+/** Simple in-process limiter to protect free external services from runaway usage. */
 export function consumeRateLimit(key: string, limit: number, windowMs: number) {
   const now = Date.now();
+  cleanup(now, windowMs);
   const bucket = buckets.get(key) ?? { hits: [] };
   bucket.hits = bucket.hits.filter((time) => time > now - windowMs);
 
@@ -20,7 +31,16 @@ export function consumeRateLimit(key: string, limit: number, windowMs: number) {
   return { allowed: true, remaining: limit - bucket.hits.length, retryAfterSeconds: 0 };
 }
 
+/** Prefer the platform-provided IP; the first forwarded value can be client-controlled. */
 export function requestKey(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  return forwarded?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "local";
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+
+  const forwarded = request.headers
+    .get("x-forwarded-for")
+    ?.split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  return forwarded?.at(-1) ?? "local";
 }
