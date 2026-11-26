@@ -4,6 +4,36 @@ import { generatePlan, isAiEnabled } from "@/lib/ai";
 import { consumeRateLimit, requestKey } from "@/lib/rate-limit";
 import type { Household, Ingredient } from "@/lib/types";
 
+export const runtime = "nodejs";
+
+function cleanIngredients(value: unknown): Ingredient[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+    .map((item) => {
+      const name = String(item.name ?? "").trim().slice(0, 80);
+      const quantity = Number(item.quantity);
+      const unit = String(item.unit ?? "pcs").trim().slice(0, 16) || "pcs";
+      return {
+        name,
+        quantity: Number.isFinite(quantity) ? Math.min(100_000, Math.max(0.1, quantity)) : 1,
+        unit,
+      };
+    })
+    .filter((item) => item.name.length > 0)
+    .slice(0, 30);
+}
+
+function integerInRange(value: unknown, min: number, max: number, fallback: number): number {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(number)));
+}
+
+function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return allowed.includes(value as T) ? (value as T) : fallback;
+}
+
 export async function POST(request: Request) {
   if (isAiEnabled()) {
     const limit = consumeRateLimit(`plan:${requestKey(request)}`, 30, 60 * 60 * 1000);
@@ -17,33 +47,32 @@ export async function POST(request: Request) {
 
   let body: { ingredients?: unknown; household?: unknown };
   try {
-    body = (await request.json()) as typeof body;
+    const raw = await request.text();
+    if (raw.length > 100_000) {
+      return NextResponse.json({ error: "That request is too large." }, { status: 413 });
+    }
+    body = JSON.parse(raw) as typeof body;
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
-  const ingredients = Array.isArray(body.ingredients)
-    ? (body.ingredients as Ingredient[])
-        .filter((i) => i && typeof i.name === "string" && Number(i.quantity) > 0)
-        .slice(0, 30)
-    : [];
-
+  const ingredients = cleanIngredients(body.ingredients);
   if (!ingredients.length) {
     return NextResponse.json({ error: "Add at least one ingredient first." }, { status: 400 });
   }
 
   const raw = (body.household ?? {}) as Partial<Household>;
   const household: Household = {
-    people: Math.min(12, Math.max(1, Number(raw.people) || 1)),
-    portions: ["small", "regular", "large"].includes(String(raw.portions))
-      ? (raw.portions as Household["portions"])
-      : "regular",
-    days: Math.min(7, Math.max(1, Number(raw.days) || 7)),
-    focus: ["protein", "balanced", "quick"].includes(String(raw.focus))
-      ? (raw.focus as Household["focus"])
-      : "protein",
+    people: integerInRange(raw.people, 1, 12, 2),
+    portions: oneOf(raw.portions, ["small", "regular", "large"] as const, "regular"),
+    days: integerInRange(raw.days, 1, 7, 7),
+    focus: oneOf(raw.focus, ["protein", "balanced", "quick"] as const, "protein"),
   };
 
-  const result = await generatePlan(ingredients, household);
-  return NextResponse.json(result);
+  try {
+    const result = await generatePlan(ingredients, household);
+    return NextResponse.json(result);
+  } catch {
+    return NextResponse.json({ error: "Could not build your plan right now. Please try again." }, { status: 500 });
+  }
 }
