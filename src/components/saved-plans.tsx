@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarDays, FolderOpen, LoaderCircle, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { Household, Ingredient, MealPlan } from "@/lib/types";
 
@@ -33,6 +33,17 @@ export function SavedPlans({
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.activeElement as HTMLElement | null;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+      previous?.focus();
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -79,6 +90,7 @@ export function SavedPlans({
   }
 
   async function remove(id: string) {
+    if (!window.confirm("Delete this saved plan? This cannot be undone.")) return;
     setBusyId(id);
     try {
       const response = await fetch(`/api/plans/${id}`, { method: "DELETE" });
@@ -94,6 +106,7 @@ export function SavedPlans({
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         className="btn-outline !px-4 !py-2 text-xs"
@@ -144,7 +157,7 @@ export function SavedPlans({
                     <button type="button" onClick={() => void openPlan(plan.id)} disabled={busyId === plan.id} className="rounded-full bg-moss px-3 py-1.5 text-[11px] font-semibold text-paper disabled:opacity-50">
                       Open
                     </button>
-                    <button type="button" onClick={() => void remove(plan.id)} disabled={busyId === plan.id} className="text-muted transition-colors hover:text-clay disabled:opacity-40" aria-label="Delete plan">
+                    <button type="button" onClick={() => void remove(plan.id)} disabled={busyId === plan.id} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:bg-cream hover:text-clay disabled:opacity-40" aria-label="Delete plan">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </article>

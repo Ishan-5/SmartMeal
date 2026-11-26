@@ -48,9 +48,11 @@ export function WaitlistForm({ compact = false, source = "website" }: { compact?
             compact ? "border-white/20 bg-white/10 text-paper placeholder:text-paper/50 focus:border-paper/50 focus:ring-white/10" : "",
           )}
         />
-        <button type="submit" className={cn(compact ? "btn-light shrink-0" : "btn-primary shrink-0")} disabled={status === "loading"}>
+        <button type="submit" className={cn(compact ? "btn-light shrink-0" : "btn-primary shrink-0")} disabled={status === "loading" || status === "success"}>
           {status === "loading" ? (
             <><LoaderCircle className="h-4 w-4 animate-spin" /> Joining…</>
+          ) : status === "success" ? (
+            <><CheckCircle2 className="h-4 w-4" /> You&apos;re in</>
           ) : (
             <>Get Early Access <ArrowRight className="h-4 w-4" /></>
           )}
@@ -62,6 +64,7 @@ export function WaitlistForm({ compact = false, source = "website" }: { compact?
           status === "error" ? "text-clay" : compact ? "text-paper/60" : "text-muted",
         )}
         aria-live="polite"
+        role={status === "error" ? "alert" : undefined}
       >
         {status === "success" && <CheckCircle2 className="mt-px h-4 w-4 shrink-0" />}
         {message || "No spam. Just launch news and early access."}
