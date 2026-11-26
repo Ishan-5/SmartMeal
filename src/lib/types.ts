@@ -37,6 +37,7 @@ export interface Recipe {
   minutes: number;
   emoji: string;
   tags: string[];
+  videoUrl?: string;
   ingredients: RecipeIngredient[];
   steps: string[];
 }
