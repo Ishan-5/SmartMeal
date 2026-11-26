@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Check, Leaf, LockKeyhole, ScanLine, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, Leaf, LoaderCircle, LockKeyhole, ScanLine, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { HouseholdStep } from "@/components/household-step";
 import { PlanStep } from "@/components/plan-step";
+import { SavedPlans } from "@/components/saved-plans";
 import { ScanStep } from "@/components/scan-step";
 import { servingCount } from "@/lib/plan";
 import type { AiMode } from "@/lib/ai";
@@ -36,12 +37,67 @@ export default function WorkspacePage() {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
   const [user, setUser] = useState<{ name: string } | null>(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Keep the current session in this browser so a refresh never loses the work.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("smartmeal-workspace");
+      if (raw) {
+        const saved = JSON.parse(raw) as Partial<{
+          step: Step;
+          ingredients: Ingredient[];
+          preview: string | null;
+          mode: AiMode | null;
+          note: string;
+          household: Household;
+          plan: MealPlan | null;
+        }>;
+        if (saved.ingredients?.length) setIngredients(saved.ingredients);
+        if (saved.preview && saved.preview.length < 700_000) setPreview(saved.preview);
+        if (saved.mode) setMode(saved.mode);
+        if (saved.note) setNote(saved.note);
+        if (saved.household) setHousehold(saved.household);
+        if (saved.plan) {
+          setPlan(saved.plan);
+          setStep(3);
+        } else if (saved.step === 2) {
+          setStep(2);
+        }
+      }
+    } catch {
+      // A corrupt or unavailable store should never block the app.
+    }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(
+        "smartmeal-workspace",
+        JSON.stringify({
+          step,
+          ingredients,
+          preview: preview && preview.length < 700_000 ? preview : null,
+          mode,
+          note,
+          household,
+          plan,
+        }),
+      );
+    } catch {
+      // Browsers can reject large photos; the app still works in memory.
+    }
+  }, [hydrated, step, ingredients, preview, mode, note, household, plan]);
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((res) => res.json())
       .then((data: { user?: { name: string } | null }) => setUser(data.user ?? null))
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => setCheckingSession(false));
   }, []);
 
   async function generate() {
@@ -74,6 +130,20 @@ export default function WorkspacePage() {
     setNote("");
     setPlan(null);
     setError("");
+    try {
+      localStorage.removeItem("smartmeal-workspace");
+    } catch {
+      // Nothing to clear if storage is unavailable.
+    }
+  }
+
+  function loadSaved(detail: { plan: MealPlan; ingredients: Ingredient[]; household: Household }) {
+    setPlan(detail.plan);
+    setIngredients(detail.ingredients ?? []);
+    setHousehold(detail.household);
+    setMode(detail.plan.days.some((meal) => meal.recipe.id.startsWith("ai-meal")) ? "ai" : "demo");
+    setNote("");
+    setStep(3);
   }
 
   return (
@@ -93,10 +163,15 @@ export default function WorkspacePage() {
             <Link href="/" className="hidden text-sm font-medium text-muted hover:text-moss sm:block">
               <span className="inline-flex items-center gap-1.5"><ArrowLeft className="h-4 w-4" /> Back to site</span>
             </Link>
-            {user ? (
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-mint text-xs font-bold text-moss ring-1 ring-moss/15" aria-label={`Signed in as ${user.name}`}>
-                {initialiseName(user.name)}
-              </span>
+            {checkingSession ? (
+              <div className="h-9 w-20 animate-pulse rounded-full bg-mint/50" aria-hidden="true" />
+            ) : user ? (
+              <div className="flex items-center gap-2">
+                <SavedPlans onLoad={loadSaved} />
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-mint text-xs font-bold text-moss ring-1 ring-moss/15" aria-label={`Signed in as ${user.name}`}>
+                  {initialiseName(user.name)}
+                </span>
+              </div>
             ) : (
               <Link href="/login?next=/app" className="btn-outline !px-4 !py-2 text-xs">Log in</Link>
             )}
@@ -104,7 +179,7 @@ export default function WorkspacePage() {
         </div>
       </header>
 
-      <main className="shell py-10 lg:py-14">
+      <main id="main-content" className="shell py-10 lg:py-14">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="eyebrow"><Sparkles className="h-3.5 w-3.5" /> SmartMeal demo</p>
@@ -129,6 +204,7 @@ export default function WorkspacePage() {
                 type="button"
                 disabled={item.number > step}
                 onClick={() => setStep(item.number as Step)}
+                aria-current={active ? "step" : undefined}
                 className={cn(
                   "flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition-all sm:px-5",
                   active ? "border-moss bg-paper shadow-card" : complete ? "border-moss/20 bg-mint/40" : "border-moss/10 bg-cream/50 opacity-60",
@@ -152,7 +228,7 @@ export default function WorkspacePage() {
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
           <section className="panel p-5 sm:p-8">
             {error && (
-              <div className="mb-6 rounded-2xl border border-clay/30 bg-clay/5 px-4 py-3 text-sm text-clay">{error}</div>
+              <div className="mb-6 rounded-2xl border border-clay/30 bg-clay/5 px-4 py-3 text-sm text-clay" role="alert">{error}</div>
             )}
             {step === 1 && (
               <ScanStep
@@ -228,6 +304,16 @@ export default function WorkspacePage() {
           </aside>
         </div>
       </main>
+
+      {generating && (
+        <div className="fixed inset-0 z-[70] grid place-items-center bg-ink/30 px-5 backdrop-blur-sm" role="status" aria-live="polite">
+          <div className="panel max-w-sm p-8 text-center">
+            <LoaderCircle className="mx-auto h-8 w-8 animate-spin text-moss" />
+            <p className="mt-5 font-serif text-2xl text-ink">Building your week…</p>
+            <p className="muted-text mt-2 text-sm">The AI is choosing meals and checking your quantities. This usually takes a few seconds.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
