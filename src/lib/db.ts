@@ -70,6 +70,7 @@ async function localRead(): Promise<Database> {
       plans: parsed.plans ?? [],
     };
   } catch {
+    console.error("SmartMeal could not read its local database; starting with empty data.");
     return emptyDb();
   }
 }
@@ -94,7 +95,7 @@ async function trimPlans(userId: string) {
   const rows = await sbQuery<Array<{ id: string }>>(`plans?select=id&userId=eq.${enc(userId)}&order=createdAt.desc`);
   const stale = rows.slice(50).map((row) => `"${row.id}"`);
   if (stale.length) {
-    await sbQuery(`plans?id=in.(${enc(stale.join(","))})`, { method: "DELETE" });
+    await sbQuery(`plans?id=in.(${enc(`(${stale.join(",")})`)})`, { method: "DELETE" });
   }
 }
 
@@ -143,7 +144,9 @@ export const db = {
   },
 
   async createSession(userId: string, token: string, expiresAt: string) {
+    const now = new Date().toISOString();
     if (supabaseEnabled) {
+      await sbQuery(`sessions?expiresAt=lt.${enc(now)}`, { method: "DELETE" });
       await sbQuery(`sessions?userId=eq.${enc(userId)}`, { method: "DELETE" });
       await sbQuery("sessions?select=*", {
         method: "POST",
@@ -153,7 +156,9 @@ export const db = {
     }
     await locked(async () => {
       const database = await localRead();
-      database.sessions = database.sessions.filter((s) => s.userId !== userId);
+      database.sessions = database.sessions.filter(
+        (s) => s.userId !== userId && new Date(s.expiresAt).getTime() >= Date.now(),
+      );
       database.sessions.push({ token, userId, expiresAt });
       await localWrite(database);
     });
@@ -226,8 +231,9 @@ export const db = {
     }
     return locked(async () => {
       const database = await localRead();
-      database.plans.unshift(saved);
-      database.plans = database.plans.slice(0, 50);
+      const ownPlans = [saved, ...database.plans.filter((p) => p.userId === userId)].slice(0, 50);
+      const otherPlans = database.plans.filter((p) => p.userId !== userId);
+      database.plans = [...ownPlans, ...otherPlans];
       await localWrite(database);
       return saved;
     });
@@ -241,5 +247,28 @@ export const db = {
     return database.plans
       .filter((p) => p.userId === userId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  async findPlan(userId: string, planId: string) {
+    if (supabaseEnabled) {
+      const rows = await sbQuery<SavedPlan[]>(
+        `plans?select=*&id=eq.${enc(planId)}&userId=eq.${enc(userId)}&limit=1`,
+      );
+      return rows[0];
+    }
+    const database = await localRead();
+    return database.plans.find((p) => p.id === planId && p.userId === userId);
+  },
+
+  async deletePlan(userId: string, planId: string) {
+    if (supabaseEnabled) {
+      await sbQuery(`plans?id=eq.${enc(planId)}&userId=eq.${enc(userId)}`, { method: "DELETE" });
+      return;
+    }
+    await locked(async () => {
+      const database = await localRead();
+      database.plans = database.plans.filter((p) => !(p.id === planId && p.userId === userId));
+      await localWrite(database);
+    });
   },
 };
