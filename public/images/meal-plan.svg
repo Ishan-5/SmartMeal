@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 460" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F4EEE3"/><stop offset="1" stop-color="#E4D9C6"/></linearGradient>
+    <filter id="s" x="-30%" y="-30%" width="160%" height="180%"><feGaussianBlur stdDeviation="12"/></filter>
+  </defs>
+  <rect width="640" height="460" rx="32" fill="url(#bg)"/>
+  <g stroke="#D8CCB6" stroke-width="2" opacity=".4"><path d="M0 116h640M0 232h640M0 348h640M160 0v460M320 0v460M480 0v460"/></g>
+  <ellipse cx="320" cy="248" rx="270" ry="170" fill="#8E7457" opacity=".12" filter="url(#s)"/>
+
+  <!-- bowl 1: lemon chicken -->
+  <g transform="translate(54 78)">
+    <circle cx="112" cy="148" r="112" fill="#D8CBB4" opacity=".35"/>
+    <circle cx="112" cy="140" r="106" fill="#FCFAF4"/>
+    <circle cx="112" cy="140" r="88" fill="#EFE8D8"/>
+    <circle cx="112" cy="140" r="76" fill="#E3D2A9"/>
+    <g fill="#8AAE73"><path d="M70 116c-14-24 4-40 24-30 4 18-6 28-24 30Z"/><path d="M132 172c-8-24 12-38 28-24-6 16-16 22-28 24Z"/><path d="M64 166c4-22 24-28 34-12-12 12-22 14-34 12Z"/></g>
+    <g fill="#D89A82"><rect x="96" y="108" width="52" height="24" rx="12" transform="rotate(-18 96 108)"/><rect x="88" y="146" width="46" height="22" rx="11" transform="rotate(12 88 146)"/></g>
+    <path d="M142 108a18 18 0 1 1 0 36 18 18 0 0 1 0-36Z" fill="#E7C56B"/><path d="M142 108v36M124 126h36" stroke="#F6E7B4" stroke-width="3"/>
+  </g>
+
+  <!-- bowl 2: herby eggs -->
+  <g transform="translate(230 54)">
+    <circle cx="112" cy="156" r="112" fill="#D8CBB4" opacity=".35"/>
+    <circle cx="112" cy="148" r="106" fill="#FCFAF4"/>
+    <circle cx="112" cy="148" r="88" fill="#EFE8D8"/>
+    <circle cx="112" cy="148" r="76" fill="#D9E3CF"/>
+    <g fill="#6F9A63"><path d="M62 128c-16-26 4-44 28-32 4 20-8 30-28 32Z"/><path d="M130 178c-10-26 12-42 30-28-6 18-18 26-30 28Z"/><path d="M70 176c6-24 28-28 38-10-14 12-26 14-38 10Z"/></g>
+    <g fill="#C76048"><circle cx="88" cy="112" r="16"/><circle cx="146" cy="132" r="14"/><circle cx="104" cy="180" r="13"/></g>
+    <g fill="#F7EBCF"><ellipse cx="118" cy="136" rx="28" ry="20"/><ellipse cx="94" cy="158" rx="24" ry="17"/><ellipse cx="136" cy="170" rx="22" ry="16"/></g>
+    <g fill="#E8B84B"><circle cx="118" cy="136" r="9"/><circle cx="94" cy="158" r="8"/><circle cx="136" cy="170" r="7"/></g>
+  </g>
+
+  <!-- bowl 3: yogurt flatbread -->
+  <g transform="translate(412 80)">
+    <circle cx="104" cy="146" r="106" fill="#D8CBB4" opacity=".35"/>
+    <circle cx="104" cy="138" r="100" fill="#FCFAF4"/>
+    <circle cx="104" cy="138" r="84" fill="#EFE8D8"/>
+    <circle cx="104" cy="138" r="72" fill="#E5CFA5"/>
+    <path d="M46 118c26-22 84-22 112 0-28 22-86 22-112 0Z" fill="#F3E3C4"/>
+    <path d="M52 164c30-18 72-18 104 0-30 18-74 18-104 0Z" fill="#F3E3C4"/>
+    <path d="M58 102c22-12 50-12 70 0-22 12-50 12-70 0Z" fill="#FFFDF8"/>
+    <g fill="#6F9A63"><path d="M78 112c-12-20 2-34 20-26 2 16-6 24-20 26Z"/><path d="M120 150c-8-20 8-32 22-22-4 14-12 20-22 22Z"/></g>
+    <g fill="#C97A54"><circle cx="96" cy="120" r="4"/><circle cx="130" cy="126" r="4"/></g>
+  </g>
+
+  <!-- fork + spoon -->
+  <g transform="translate(290 362)" fill="#A9B3AB">
+    <rect x="0" y="0" width="5" height="58" rx="2"/><rect x="14" y="0" width="5" height="58" rx="2"/>
+    <ellipse cx="34" cy="14" rx="10" ry="16"/><rect x="32" y="28" width="4" height="30" rx="2"/>
+  </g>
+</svg>
