@@ -1,57 +1,122 @@
 # SmartMeal
 
-Your AI kitchen assistant for effortless, protein-rich meals.
+**Turn a photo of your fridge into a week of protein-forward meals — with an exact shopping list.**
 
-Snap a photo of your fridge or pantry, get a usable ingredient inventory, set your household, and receive a weekly protein-forward plan with exact grocery quantities.
+SmartMeal is a real, free-to-run AI kitchen assistant. Upload a photo, edit the recognised inventory, set your household, and get a seven-day plan built around what you already own. Save plans to an account, reopen them later, and export the waitlist as CSV without paying for email tooling.
+
+No credit card, no sign-up needed to try the full flow.
+
+---
+
+## Why it exists
+
+Most meal planners assume an empty kitchen and a full shopping budget. SmartMeal starts with the food you already have, scales portions to the people eating, and only adds the missing gaps to the grocery list.
+
+| Problem | SmartMeal answer |
+| --- | --- |
+| “What can I cook with this?” | Vision model reads a fridge/pantry photo into an editable inventory |
+| “How much do I actually need?” | Every quantity is scaled by household size and portion setting |
+| “I don't want to buy protein again” | Protein-first planning enforces a minimum per meal and retries if needed |
+| “I lost my plan” | Optional account saves up to 50 plans per user |
+| “AI is down” | Automatic fallback to the local planning engine keeps the app usable |
+| “Free tier or bust” | OpenRouter + Groq + Supabase + Vercel free tiers, no paid services |
+
+---
+
+## Live product map
+
+| Route | Purpose |
+| --- | --- |
+| `/` | Landing page, product story, FAQ and waitlist |
+| `/app` | Full workspace: scan → household → plan → grocery list |
+| `/login`, `/signup` | Accounts for saved plans |
+| `/privacy`, `/terms` | Honest policies for a product that handles photos and email |
+| `/api/status` | Which provider is live for scanning and planning |
+| `/api/admin/waitlist` | CSV export, protected by `ADMIN_TOKEN` |
+
+---
 
 ## Run locally
 
+Requires **Node.js 20.6+** (for `node --env-file` in the optional migration script).
+
 ```bash
+git clone https://github.com/Ishan-5/SmartMeal.git
+cd SmartMeal
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
-Open http://localhost:3000. Everything works in demo mode with no keys.
+Open **http://localhost:3000**. With an empty `.env.local` you get demo recognition and local planning, stored in `data/db.json`. No external service is required.
 
-## Make it real — 100% free
+Useful commands:
 
-### 1. Real AI (two free providers)
+```bash
+npm run typecheck   # TypeScript only
+npm run build       # Production build
+npm run check       # Typecheck + build
+npm run db:migrate  # Optional: create Supabase tables from DATABASE_URL
+```
 
-SmartMeal uses the right free tool for each job:
+---
 
-- **Photo recognition → OpenRouter vision** (`particle-ai/particle-1:free`), because it can see images (~10s). A slower free model (`nvidia/nemotron-3.5-super-vl:free`) is used automatically if the first one is rate-limited.
-- **Weekly planning → Groq** (`openai/gpt-oss-120b`), because it is much faster for text (~2-3s instead of ~25s).
+## The free stack
 
-Setup:
+| Job | Service | Free-tier choice |
+| --- | --- | --- |
+| Photo recognition | OpenRouter | `particle-ai/particle-1:free`, fallback `nvidia/nemotron-3.5-super-vl:free` |
+| Weekly planning | Groq | `openai/gpt-oss-120b` |
+| Database/auth storage | Supabase | Free Postgres project |
+| Hosting | Vercel | Hobby plan and free `*.vercel.app` domain |
+| Waitlist export | CSV over HTTP | No paid email service |
 
-1. Get an OpenRouter key at https://openrouter.ai/keys and a Groq key at https://console.groq.com/keys.
-2. Copy `.env.example` to `.env.local` and set:
-   ```env
-   OPENROUTER_API_KEY=your-openrouter-key
-   OPENROUTER_MODEL=particle-ai/particle-1:free
-   OPENROUTER_FALLBACK_MODEL=nvidia/nemotron-3.5-super-vl:free
-   GROQ_API_KEY=your-groq-key
-   GROQ_MODEL=openai/gpt-oss-120b
-   ```
+Gemini is supported as an optional fallback, but some Google Cloud projects do not have the Gemini free tier enabled and return `403: free tier is not available for this project`. That is why it is not the primary provider.
+
+Every plan includes a YouTube link: an exact URL when the model returns a valid one, otherwise a search for the dish.
+
+---
+
+## Make it real
+
+### 1. Connect the AI
+
+1. Create free keys at [OpenRouter](https://openrouter.ai/keys) and [Groq](https://console.groq.com/keys).
+2. Add them to `.env.local`:
+
+```env
+OPENROUTER_API_KEY= your-key
+OPENROUTER_MODEL=particle-ai/particle-1:free
+OPENROUTER_FALLBACK_MODEL=nvidia/nemotron-3.5-super-vl:free
+GROQ_API_KEY= your-key
+GROQ_MODEL=openai/gpt-oss-120b
+```
+
 3. Restart `npm run dev`.
 
-Each step falls back automatically: planning tries Groq → OpenRouter → Gemini → OpenAI → local engine; scanning tries OpenRouter → Gemini → OpenAI → sample inventory. The app never breaks because one provider is slow or rate-limited.
+Check the result at `http://localhost:3000/api/status`:
 
-Every planned meal includes a **YouTube link**: an exact URL when the AI knows one, otherwise a search for that dish. Open a meal in the plan to see **Watch this recipe on YouTube**.
+```json
+{
+  "ok": true,
+  "ai": {
+    "scan": { "provider": "openrouter", "live": true, "model": "particle-ai/particle-1:free" },
+    "plan": { "provider": "groq", "live": true, "model": "openai/gpt-oss-120b" }
+  },
+  "storage": "supabase",
+  "waitlistExport": true
+}
+```
 
-To check what is live: http://localhost:3000/api/status — it reports `ai.scan` and `ai.plan` separately.
+Recognition tries OpenRouter → Gemini → OpenAI → sample inventory. Planning tries Groq → OpenRouter → Gemini → OpenAI → local engine. A slow or rate-limited provider never breaks the flow.
 
-Rate limits (30 scans and 30 plans per hour per IP) protect the free keys.
+### 2. Add persistent storage
 
-**Why not Gemini?** Some Google Cloud projects do not have the Gemini free tier enabled and return `403: free tier is not available for this project`. Gemini is still supported as a fallback if your project has free access.
+Local JSON works on your machine, but Vercel's filesystem is read-only and ephemeral. **A deployed product needs Supabase.**
 
-### 2. Persistent data (Supabase free tier)
-
-Local JSON (`data/db.json`) works on your machine but not on a hosted server. For a real deployed product:
-
-1. Create a free project at https://database.new.
-2. Open **SQL Editor**, paste the contents of `supabase/schema.sql`, and run it.
-3. In **Project Settings → API**, copy the **Project URL** and the **service_role** key (never use the anon key here).
+1. Create a free project at [database.new](https://database.new).
+2. Open **SQL Editor**, paste `supabase/schema.sql`, and run it.
+3. In **Project Settings → API**, copy the **Project URL** and **service_role** key. Never use the anon key.
 4. Add to `.env.local`:
 
 ```env
@@ -61,50 +126,141 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 5. Restart the server. Accounts, sessions, waitlist entries and saved plans now live in Postgres.
 
-### 3. Waitlist export
+If you prefer running the schema from the CLI, set `DATABASE_URL` and run `npm run db:migrate`.
 
-Set `ADMIN_TOKEN=some-long-random-string` in `.env.local`, then download the list as CSV:
+### 3. Export the waitlist
 
-```bash
-curl -H "Authorization: Bearer your-token" http://localhost:3000/api/admin/waitlist
+```env
+ADMIN_TOKEN=a-long-random-string
 ```
 
-No paid email service required — you get the emails as a CSV you can import into any free email tool.
+```bash
+curl -H "Authorization: Bearer $ADMIN_TOKEN" \
+  https://your-app.vercel.app/api/admin/waitlist \
+  -o smartmeal-waitlist.csv
+```
+
+Import that CSV into any free email tool. No paid mail service is needed.
 
 ### 4. Deploy free on Vercel
 
-1. Push this folder to a GitHub repository.
-2. In Vercel, **Add New → Project**, import that repo.
-3. Add the same environment variables from `.env.local` to the Vercel project.
-4. Deploy. You get a free `*.vercel.app` URL.
+1. Push the repository to GitHub.
+2. In Vercel, **Add New → Project** and import `Ishan-5/SmartMeal`.
+3. Add **all** variables from `.env.local` to the Vercel project, especially:
+   - `APP_URL=https://your-project.vercel.app`
+   - `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `OPENROUTER_FALLBACK_MODEL`
+   - `GROQ_API_KEY`, `GROQ_MODEL`
+   - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+   - `ADMIN_TOKEN`
+4. Deploy. Use the free `*.vercel.app` URL; a custom domain costs money.
 
-A custom domain costs money, so the free URL is the zero-cost option.
+`APP_URL` must be set before the build so canonical URLs, Open Graph tags, `robots.txt` and `sitemap.xml` use the production domain. A Vercel redeploy is required after changing it.
+
+---
 
 ## Environment reference
 
-See `.env.example`. All values are optional.
+See `.env.example` for a copyable template. Everything is optional locally; Supabase is required in production.
 
 | Variable | Purpose |
 | --- | --- |
-| `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` | Free photo recognition (vision model) |
-| `GROQ_API_KEY`, `GROQ_MODEL` | Fast free weekly planning |
-| `AI_SCAN_PROVIDER`, `AI_PLAN_PROVIDER` | Optional provider overrides (`groq`, `openrouter`, `gemini`, `openai`) |
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional Gemini fallback (free tier must be enabled) |
-| `OPENAI_API_KEY` + `AI_PROVIDER=openai` | Optional paid alternative provider |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Free hosted Postgres storage |
+| `APP_URL` | Public URL used for metadata, canonical links and sitemap |
+| `OPENROUTER_API_KEY` | Free vision key for photo recognition |
+| `OPENROUTER_MODEL` | Vision model; default `particle-ai/particle-1:free` |
+| `OPENROUTER_FALLBACK_MODEL` | Backup vision model |
+| `GROQ_API_KEY` | Free fast text key for planning |
+| `GROQ_MODEL` | Plan model; default `openai/gpt-oss-120b` |
+| `AI_SCAN_PROVIDER`, `AI_PLAN_PROVIDER` | Force a provider: `groq`, `openrouter`, `gemini`, `openai`, `demo` |
+| `GEMINI_API_KEY` / `GOOGLE_API_KEY` | Optional Gemini fallback |
+| `GEMINI_MODEL` | Optional Gemini model override |
+| `OPENAI_API_KEY`, `OPENAI_MODEL`, `AI_PROVIDER=openai` | Optional paid fallback; not needed for free setup |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Hosted Postgres storage |
+| `DATABASE_URL` | Only used by `npm run db:migrate` |
+| `DATA_DIR` | Local JSON fallback directory |
 | `ADMIN_TOKEN` | Protects the waitlist CSV export |
-| `DATA_DIR` | Local JSON fallback location |
+| `NEXT_DIST_DIR` | Internal: allows a production build beside a dev server |
 
-## Pages and APIs
+Never commit `.env.local`. `.gitignore` also covers `.env.*.local`.
 
-| Route | What it does |
+---
+
+## API reference
+
+| Endpoint | Auth | Notes |
+| --- | --- | --- |
+| `POST /api/scan` | None | `{ image: dataURL, mimeType }`; validates size/type; returns ingredients + mode |
+| `POST /api/plan` | None | `{ ingredients, household }`; returns plan, mode and optional note |
+| `POST /api/waitlist` | None | `{ email, source }`; duplicate-safe |
+| `GET /api/auth/me` | Cookie | Current user or `{ user: null }` |
+| `POST /api/auth/signup` | None | Creates account and starts session |
+| `POST /api/auth/login` | None | Starts session |
+| `POST /api/auth/logout` | Cookie | Ends session |
+| `GET /api/plans` | Cookie | Saved plan summaries |
+| `POST /api/plans` | Cookie | Saves a validated plan |
+| `GET /api/plans/[id]` | Cookie | Reopens a plan owned by the user |
+| `DELETE /api/plans/[id]` | Cookie | Deletes a plan owned by the user |
+| `GET /api/status` | None | Provider health summary |
+| `GET /api/admin/waitlist` | Bearer token | CSV export |
+
+Errors are JSON: `{ "error": "Human-readable message" }`. Rate limits return `429` with `Retry-After`.
+
+---
+
+## How it works
+
+```text
+Photo → browser resize → OpenRouter vision → editable inventory
+                                      ↓
+Household settings → Groq planner → protein check/retry → 7-day plan
+                                      ↓
+Grocery math → exact buy quantities → copy/download/save
+```
+
+`src/lib/ai.ts` owns provider chains and prompts. `src/lib/plan.ts` owns plan assembly, grocery math and aliases. `src/lib/db.ts` switches between Supabase and a local JSON fallback. UI lives in `src/components`, routes in `src/app`.
+
+### Security notes
+
+- The Supabase **service_role** key stays server-side and is never prefixed with `NEXT_PUBLIC_`. It bypasses RLS, so every query is scoped by `userId` in server code.
+- Session tokens are random 256-bit values; only their SHA-256 digest is stored. Cookies are `httpOnly`, `SameSite=Lax`, secure in production, and use the `__Host-` prefix there.
+- OAuth/password reset are intentionally out of scope for this free MVP. Signing in replaces other sessions for that user.
+- Photos are resized in the browser and sent to the recognition provider; images are not written to the database. Saved plans store ingredients and settings only.
+- Rate limits are best-effort and in-memory: 30 scans and 30 plans per hour per process. They are not a distributed guarantee on serverless.
+- Signup, login and waitlist are public by design. Add a dedicated WAF or CAPTCHA if you expect abuse.
+
+---
+
+## Troubleshooting
+
+| Symptom | Fix |
 | --- | --- |
-| `/` | Landing page + waitlist form |
-| `/app` | Scan → household → plan → grocery list |
-| `/login`, `/signup` | Accounts with saved plans |
-| `/api/status` | Shows which free services are live |
-| `/api/admin/waitlist` | CSV export (requires `ADMIN_TOKEN`) |
+| `/api/status` says both providers are unavailable | Check key names and restart the dev server or redeploy |
+| Scan takes ~60s | The primary vision model is busy; the fallback chain is working. Try again later |
+| Plan says “Demo plan” | Groq/OpenRouter quota hit, or no key set; local engine took over |
+| Deployed signup/waitlist fails silently | Supabase env missing or `supabase/schema.sql` not applied |
+| Canonical URL is localhost | Set `APP_URL` and redeploy |
+| Gemini returns `403 free tier not available` | Expected on some Google projects; use OpenRouter + Groq |
+| `npm run db:migrate` fails | Use Node 20.6+ and set `DATABASE_URL` |
+| Build collides with dev server | `NEXT_DIST_DIR=.next-build npm run build`, then delete `.next-build` |
 
-## Security note
+---
 
-The Supabase **service role** key must stay server-side. Never prefix it with `NEXT_PUBLIC_`. RLS is enabled on all tables, and the app only accesses them from server routes.
+## Deployment checklist
+
+- [ ] Supabase project created and `schema.sql` applied
+- [ ] `APP_URL` set to the final `https://*.vercel.app` URL
+- [ ] OpenRouter, Groq and Supabase variables added in Vercel
+- [ ] `ADMIN_TOKEN` set to a long random string
+- [ ] `/api/status` reports `live: true` for both providers
+- [ ] `/api/admin/waitlist` returns CSV with the bearer token
+- [ ] Signup → save plan → reopen plan tested on the deployed URL
+- [ ] `/privacy` and `/terms` reachable from the footer
+
+---
+
+## Contributing
+
+Issues and pull requests are welcome at [github.com/Ishan-5/SmartMeal](https://github.com/Ishan-5/SmartMeal). Keep changes small, run `npm run check`, and never commit secrets.
+
+---
+
+**Snap. Plan. Eat well.**
