@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { isSameOriginRequest } from "@/lib/security";
 import type { Household, Ingredient, MealPlan } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -34,8 +36,19 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  }
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Sign in to save a plan." }, { status: 401 });
+
+  const limit = consumeRateLimit(`plans:${user.id}`, 60, 60 * 60 * 1000);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Too many plans saved right now. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
+  }
 
   let body: { plan?: unknown; ingredients?: unknown; household?: unknown };
   try {
