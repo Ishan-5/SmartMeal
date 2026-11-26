@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F6F1E6"/><stop offset="1" stop-color="#EAE1CF"/></linearGradient>
+    <filter id="s" x="-30%" y="-30%" width="160%" height="180%"><feGaussianBlur stdDeviation="8"/></filter>
+  </defs>
+  <rect width="600" height="600" rx="32" fill="url(#bg)"/>
+  <g stroke="#D8CCB6" stroke-width="2" opacity=".5"><path d="M40 140h520M40 300h520M40 460h520M140 40v520M300 40v520M460 40v520"/></g>
+
+  <ellipse cx="300" cy="318" rx="240" ry="230" fill="#8E7457" opacity=".1" filter="url(#s)"/>
+
+  <!-- spinach pile -->
+  <g transform="translate(96 106)">
+    <ellipse cx="90" cy="100" rx="92" ry="76" fill="#6F9A63" opacity=".25"/>
+    <path d="M30 96C6 54 34 22 70 34c6 34-10 54-40 62Z" fill="#5D8B55"/>
+    <path d="M74 88C64 42 96 18 126 38c-4 32-24 48-52 50Z" fill="#72A067"/>
+    <path d="M118 100c10-40 48-44 64-18-20 20-40 26-64 18Z" fill="#6B975F"/>
+    <path d="M54 118c24-34 64-30 76-2-24 14-50 14-76 2Z" fill="#81AC74"/>
+    <path d="M46 78c22-20 48-12 50 12" stroke="#A9C79A" stroke-width="3" opacity=".6"/>
+  </g>
+
+  <!-- eggs -->
+  <g transform="translate(318 96)">
+    <rect x="0" y="24" width="186" height="126" rx="18" fill="#D2BE9F"/>
+    <rect x="12" y="36" width="162" height="102" rx="12" fill="#E4D3B6"/>
+    <g fill="#FAE9CB">
+      <ellipse cx="52" cy="72" rx="23" ry="26"/><ellipse cx="108" cy="72" rx="23" ry="26"/><ellipse cx="164" cy="72" rx="18" ry="26"/>
+      <ellipse cx="52" cy="124" rx="23" ry="20"/><ellipse cx="108" cy="124" rx="23" ry="20"/><ellipse cx="164" cy="124" rx="18" ry="20"/>
+    </g>
+  </g>
+
+  <!-- chicken breast -->
+  <g transform="translate(78 286)">
+    <rect x="0" y="0" width="222" height="136" rx="20" fill="#D9B388"/>
+    <rect x="12" y="12" width="198" height="112" rx="14" fill="#EBD2AE"/>
+    <path d="M36 44c42-24 112-20 148 4 14 10 10 32-6 40-40 18-104 14-142-4-14-8-14-30 0-40Z" fill="#E6AFA0"/>
+    <path d="M48 54c36-14 80-12 112 2" stroke="#F4CABC" stroke-width="8" stroke-linecap="round"/>
+    <path d="M62 82c30 8 66 8 92-2" stroke="#D89686" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- yogurt bowl -->
+  <g transform="translate(344 276)">
+    <ellipse cx="92" cy="126" rx="92" ry="22" fill="#8E7457" opacity=".18"/>
+    <path d="M0 36c0 52 40 88 92 88s92-36 92-88Z" fill="#FCFAF4"/>
+    <ellipse cx="92" cy="36" rx="92" ry="34" fill="#E8E0D2"/>
+    <ellipse cx="92" cy="36" rx="74" ry="25" fill="#FFFDF8"/>
+    <path d="M56 34c18-14 46-12 60 4" stroke="#DED6C7" stroke-width="4" stroke-linecap="round"/>
+    <g fill="#C97A54"><circle cx="70" cy="30" r="5"/><circle cx="112" cy="42" r="4"/><circle cx="92" cy="24" r="3"/></g>
+    <g fill="#6F9A63"><circle cx="84" cy="44" r="3"/><circle cx="122" cy="30" r="3"/></g>
+  </g>
+
+  <!-- tomatoes + lemon -->
+  <g transform="translate(132 452)">
+    <circle cx="42" cy="42" r="38" fill="#C65F47"/><circle cx="112" cy="48" r="33" fill="#D97554"/>
+    <path d="M36 6c6-6 12-6 16 0M104 16c6-6 12-6 16 0" stroke="#6F8E5C" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="216" cy="42" r="38" fill="#E7C56B"/><path d="M216 4v76M178 42h76" stroke="#F5E3A8" stroke-width="4"/>
+  </g>
+
+  <!-- grains -->
+  <g transform="translate(402 448)">
+    <rect x="0" y="12" width="120" height="96" rx="14" fill="#DCE5D8" opacity=".9"/>
+    <rect x="8" y="48" width="104" height="54" rx="8" fill="#C9A870"/>
+    <rect x="-6" y="4" width="132" height="16" rx="8" fill="#3F5C4B"/>
+    <g fill="#A8834E" opacity=".6"><circle cx="30" cy="66" r="3"/><circle cx="60" cy="78" r="3"/><circle cx="90" cy="64" r="3"/><circle cx="44" cy="92" r="3"/><circle cx="78" cy="96" r="3"/></g>
+  </g>
+</svg>
