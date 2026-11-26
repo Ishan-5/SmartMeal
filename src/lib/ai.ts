@@ -20,10 +20,11 @@ const openaiModel = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const providers: AiProvider[] = ["groq", "openrouter", "gemini", "openai"];
 
 // A slow free provider must not hold a serverless request open until it times out.
-const groqTimeout = Number(process.env.AI_TIMEOUT_MS) || 20_000;
-const openRouterTimeout = Number(process.env.AI_SCAN_TIMEOUT_MS) || 25_000;
-const geminiTimeout = Number(process.env.AI_TIMEOUT_MS) || 15_000;
-const openAiTimeout = Number(process.env.AI_TIMEOUT_MS) || 20_000;
+// Defaults keep the whole fallback chain under the 60s Vercel Hobby limit.
+const groqTimeout = Number(process.env.AI_TIMEOUT_MS) || 12_000;
+const openRouterTimeout = Number(process.env.AI_SCAN_TIMEOUT_MS) || 18_000;
+const geminiTimeout = Number(process.env.AI_TIMEOUT_MS) || 12_000;
+const openAiTimeout = Number(process.env.AI_TIMEOUT_MS) || 12_000;
 
 function keyFor(provider: AiProvider): string | undefined {
   if (provider === "groq") return groqKey;
