@@ -171,6 +171,7 @@ See `.env.example` for a copyable template. Everything is optional locally; Supa
 | `GROQ_API_KEY` | Free fast text key for planning |
 | `GROQ_MODEL` | Plan model; default `openai/gpt-oss-120b` |
 | `AI_SCAN_PROVIDER`, `AI_PLAN_PROVIDER` | Force a provider: `groq`, `openrouter`, `gemini`, `openai`, `demo` |
+| `AI_TIMEOUT_MS`, `AI_SCAN_TIMEOUT_MS` | Optional provider timeouts in milliseconds; defaults are 20s/25s |
 | `GEMINI_API_KEY` / `GOOGLE_API_KEY` | Optional Gemini fallback |
 | `GEMINI_MODEL` | Optional Gemini model override |
 | `OPENAI_API_KEY`, `OPENAI_MODEL`, `AI_PROVIDER=openai` | Optional paid fallback; not needed for free setup |
@@ -224,7 +225,9 @@ Grocery math → exact buy quantities → copy/download/save
 - Session tokens are random 256-bit values; only their SHA-256 digest is stored. Cookies are `httpOnly`, `SameSite=Lax`, secure in production, and use the `__Host-` prefix there.
 - OAuth/password reset are intentionally out of scope for this free MVP. Signing in replaces other sessions for that user.
 - Photos are resized in the browser and sent to the recognition provider; images are not written to the database. Saved plans store ingredients and settings only.
-- Rate limits are best-effort and in-memory: 30 scans and 30 plans per hour per process. They are not a distributed guarantee on serverless.
+- Write endpoints reject cross-site browser requests with an `Origin` header that does not match the app host. Requests without an Origin (curl, server-to-server) still work.
+- Rate limits are best-effort and in-memory: 30 scans/plans, 10 signups/waitlist entries and 20 logins per hour per process. They are not a distributed guarantee on serverless.
+- External AI calls have `AbortSignal` timeouts and skip the second vision model when the first fails with a fatal 4xx error, so bad keys do not waste the whole fallback chain.
 - Signup, login and waitlist are public by design. Add a dedicated WAF or CAPTCHA if you expect abuse.
 
 ---
