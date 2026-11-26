@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Leaf, LogOut, Menu, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { cn, initialiseName } from "@/lib/utils";
 
@@ -16,18 +16,48 @@ const links = [
   { href: "/#how-it-works", label: "How it works" },
   { href: "/#features", label: "Features" },
   { href: "/#our-story", label: "Our story" },
+  { href: "/#faq", label: "FAQ" },
 ];
 
 export function SiteHeader() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
   const [user, setUser] = useState<SessionUser | null>(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    if (!open) return;
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [open]);
+
+  useEffect(() => {
+    if (!accountOpen) return;
+    function closeOnOutside(event: PointerEvent) {
+      if (!accountRef.current?.contains(event.target as Node)) setAccountOpen(false);
+    }
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setAccountOpen(false);
+    }
+    window.addEventListener("pointerdown", closeOnOutside);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      window.removeEventListener("pointerdown", closeOnOutside);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [accountOpen]);
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((res) => res.json())
       .then((data: { user?: SessionUser | null }) => setUser(data.user ?? null))
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => setCheckingSession(false));
   }, []);
 
   async function logout() {
@@ -60,29 +90,43 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          {user ? (
+          {checkingSession ? (
+            <div className="h-10 w-10 animate-pulse rounded-full bg-mint/50" aria-hidden="true" />
+          ) : user ? (
             <>
               <Link href="/app" className="btn-outline !px-5 !py-2.5">
                 Open app <ArrowRight className="h-4 w-4" />
               </Link>
-              <div className="group relative">
+              <div className="relative" ref={accountRef}>
                 <button
                   type="button"
-                  className="grid h-10 w-10 place-items-center rounded-full bg-mint text-xs font-bold text-moss ring-1 ring-moss/15"
+                  onClick={() => setAccountOpen((value) => !value)}
+                  className="grid h-10 w-10 place-items-center rounded-full bg-mint text-xs font-bold text-moss ring-1 ring-moss/15 transition-transform hover:scale-105"
                   aria-label={`Account menu for ${user.name}`}
+                  aria-expanded={accountOpen}
+                  aria-haspopup="menu"
                 >
                   {initialiseName(user.name)}
                 </button>
-                <div className="invisible absolute right-0 top-12 w-52 translate-y-1 rounded-2xl border border-moss/10 bg-paper p-2 opacity-0 shadow-soft transition-all group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 focus-within:visible focus-within:opacity-100">
-                  <p className="truncate px-3 py-2 text-xs text-muted">{user.email}</p>
-                  <button
-                    type="button"
-                    onClick={logout}
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-ink hover:bg-mint/60"
-                  >
-                    <LogOut className="h-4 w-4" /> Log out
-                  </button>
-                </div>
+                {accountOpen && (
+                  <div role="menu" className="absolute right-0 top-12 z-50 w-56 rounded-2xl border border-moss/10 bg-paper p-2 shadow-soft">
+                    <p className="truncate px-3 py-2 text-xs text-muted">{user.email}</p>
+                    <Link
+                      href="/app"
+                      onClick={() => setAccountOpen(false)}
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-ink hover:bg-mint/60"
+                    >
+                      <ArrowRight className="h-4 w-4" /> Open workspace
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => void logout().then(() => setAccountOpen(false))}
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-ink hover:bg-mint/60"
+                    >
+                      <LogOut className="h-4 w-4" /> Log out
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           ) : (
@@ -103,15 +147,17 @@ export function SiteHeader() {
           onClick={() => setOpen((value) => !value)}
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
+          aria-controls="mobile-navigation"
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
       <div
+        id="mobile-navigation"
         className={cn(
-          "overflow-hidden border-t border-moss/10 bg-paper md:hidden",
-          open ? "max-h-96" : "max-h-0 border-t-0",
+          "overflow-hidden border-t border-moss/10 bg-paper transition-[max-height] md:hidden",
+          open ? "max-h-[32rem]" : "max-h-0 border-t-0",
         )}
       >
         <div className="shell flex flex-col gap-1 py-4">
@@ -129,8 +175,10 @@ export function SiteHeader() {
             <Link href="/app" onClick={() => setOpen(false)} className="btn-outline w-full">
               Try the demo
             </Link>
-            {user ? (
-              <button type="button" onClick={logout} className="btn-primary w-full">
+            {checkingSession ? (
+              <div className="h-11 w-full animate-pulse rounded-full bg-mint/50" aria-hidden="true" />
+            ) : user ? (
+              <button type="button" onClick={() => void logout()} className="btn-primary w-full">
                 Log out
               </button>
             ) : (

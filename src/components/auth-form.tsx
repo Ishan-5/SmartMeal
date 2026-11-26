@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Leaf, LoaderCircle, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Leaf, LoaderCircle, Sparkles } from "lucide-react";
 import { useState } from "react";
+
+/** Only allow local paths so `next` cannot become an external redirect. */
+function safeNext(value: string): string {
+  return value.startsWith("/") && !value.startsWith("//") && !value.includes("\\") ? value : "/app";
+}
 
 interface Props {
   mode: "login" | "signup";
@@ -15,6 +20,7 @@ export function AuthForm({ mode, next }: Props) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -30,7 +36,7 @@ export function AuthForm({ mode, next }: Props) {
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(data.error ?? "Something went wrong.");
-      router.push(next.startsWith("/") ? next : "/app");
+      router.push(safeNext(next));
       router.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Something went wrong.");
@@ -39,7 +45,7 @@ export function AuthForm({ mode, next }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-cream">
+    <main id="main-content" className="min-h-screen bg-cream">
       <div className="shell grid min-h-screen items-center gap-10 py-12 lg:grid-cols-2 lg:gap-20">
         <div className="hidden lg:block">
           <Link href="/" className="inline-flex items-center gap-2.5">
@@ -94,7 +100,28 @@ export function AuthForm({ mode, next }: Props) {
               </div>
               <div>
                 <label className="field-label" htmlFor="password">Password</label>
-                <input id="password" type="password" className="input" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={mode === "signup" ? "At least 8 characters" : "Your password"} required minLength={mode === "signup" ? 8 : 1} autoComplete={mode === "login" ? "current-password" : "new-password"} />
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    className="input pr-12"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder={mode === "signup" ? "At least 8 characters" : "Your password"}
+                    required
+                    minLength={mode === "signup" ? 8 : 1}
+                    maxLength={128}
+                    autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((value) => !value)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-moss"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
 
               {error && <p className="rounded-xl bg-clay/10 px-4 py-3 text-sm text-clay" role="alert">{error}</p>}
