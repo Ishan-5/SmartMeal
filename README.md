@@ -15,24 +15,35 @@ Open http://localhost:3000. Everything works in demo mode with no keys.
 
 ## Make it real — 100% free
 
-### 1. Real AI (OpenRouter free tier)
+### 1. Real AI (two free providers)
 
-1. Create a free account at https://openrouter.ai and make a key at https://openrouter.ai/keys.
-2. Copy `.env.example` to `.env.local`.
-3. Set:
+SmartMeal uses the right free tool for each job:
+
+- **Photo recognition → OpenRouter vision** (`particle-ai/particle-1:free`), because it can see images (~10s). A slower free model (`nvidia/nemotron-3.5-super-vl:free`) is used automatically if the first one is rate-limited.
+- **Weekly planning → Groq** (`openai/gpt-oss-120b`), because it is much faster for text (~2-3s instead of ~25s).
+
+Setup:
+
+1. Get an OpenRouter key at https://openrouter.ai/keys and a Groq key at https://console.groq.com/keys.
+2. Copy `.env.example` to `.env.local` and set:
    ```env
-   OPENROUTER_API_KEY=your-key
-   OPENROUTER_MODEL=nvidia/nemotron-3.5-super-vl:free
+   OPENROUTER_API_KEY=your-openrouter-key
+   OPENROUTER_MODEL=particle-ai/particle-1:free
+   OPENROUTER_FALLBACK_MODEL=nvidia/nemotron-3.5-super-vl:free
+   GROQ_API_KEY=your-groq-key
+   GROQ_MODEL=openai/gpt-oss-120b
    ```
-4. Restart `npm run dev`.
+3. Restart `npm run dev`.
 
-Photo recognition and weekly plans now come from a genuinely free vision model. If a call fails, SmartMeal automatically falls back to the local demo engine so the app never breaks.
+Each step falls back automatically: planning tries Groq → OpenRouter → Gemini → OpenAI → local engine; scanning tries OpenRouter → Gemini → OpenAI → sample inventory. The app never breaks because one provider is slow or rate-limited.
 
-To check what is live: http://localhost:3000/api/status
+Every planned meal includes a **YouTube link**: an exact URL when the AI knows one, otherwise a search for that dish. Open a meal in the plan to see **Watch this recipe on YouTube**.
 
-Rate limits (30 scans and 30 plans per hour per IP) protect the free key.
+To check what is live: http://localhost:3000/api/status — it reports `ai.scan` and `ai.plan` separately.
 
-**Why not Gemini?** Google's Gemini key often works, but some Google Cloud projects do not have the free tier enabled and return `403: free tier is not available for this project`. OpenRouter's `:free` models have no billing requirement, so they are the reliable zero-cost option. A Gemini key is still supported as a fallback if you have one with free access.
+Rate limits (30 scans and 30 plans per hour per IP) protect the free keys.
+
+**Why not Gemini?** Some Google Cloud projects do not have the Gemini free tier enabled and return `403: free tier is not available for this project`. Gemini is still supported as a fallback if your project has free access.
 
 ### 2. Persistent data (Supabase free tier)
 
@@ -75,8 +86,9 @@ See `.env.example`. All values are optional.
 
 | Variable | Purpose |
 | --- | --- |
-| `OPENROUTER_API_KEY` | Free real AI recognition and planning |
-| `OPENROUTER_MODEL` | Defaults to the free vision model `nvidia/nemotron-3.5-super-vl:free` |
+| `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` | Free photo recognition (vision model) |
+| `GROQ_API_KEY`, `GROQ_MODEL` | Fast free weekly planning |
+| `AI_SCAN_PROVIDER`, `AI_PLAN_PROVIDER` | Optional provider overrides (`groq`, `openrouter`, `gemini`, `openai`) |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional Gemini fallback (free tier must be enabled) |
 | `OPENAI_API_KEY` + `AI_PROVIDER=openai` | Optional paid alternative provider |
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Free hosted Postgres storage |
