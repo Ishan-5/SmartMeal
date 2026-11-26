@@ -82,6 +82,16 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
     });
   }
 
+  function markAll(done: boolean) {
+    const next = done ? new Set(plan.groceries.map(groceryKey)) : new Set<string>();
+    setChecked(next);
+    try {
+      localStorage.setItem(`smartmeal-checked:${planKey}`, JSON.stringify([...next]));
+    } catch {
+      // Checked state is a convenience; the plan still works without storage.
+    }
+  }
+
   async function savePlan() {
     setSaveState("saving");
     setSaveError("");
@@ -235,7 +245,16 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
             <p className="field-label">Grocery list · buy only the gaps</p>
             <p className="text-xs text-muted">Quantities are scaled for your household.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {plan.groceries.length > 0 && (
+              <button
+                type="button"
+                onClick={() => markAll(checked.size !== plan.groceries.length)}
+                className="btn-outline !px-4 !py-2 text-xs"
+              >
+                {checked.size === plan.groceries.length ? "Clear all" : "Mark all"}
+              </button>
+            )}
             <button type="button" onClick={downloadList} className="btn-outline !px-4 !py-2 text-xs" aria-label="Download shopping list">
               <Download className="h-3.5 w-3.5" />
             </button>
