@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, ImagePlus, LoaderCircle, Plus, Sparkles, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { SAMPLE_PHOTO } from "@/lib/demo-data";
 import type { Ingredient } from "@/lib/types";
@@ -110,6 +110,23 @@ export function ScanStep({ ingredients, setIngredients, preview, setPreview, mod
     }
   }
 
+  const handleFileRef = useRef(handleFile);
+  useEffect(() => {
+    handleFileRef.current = handleFile;
+  }, [handleFile]);
+
+  useEffect(() => {
+    function onPaste(event: ClipboardEvent) {
+      const items = Array.from(event.clipboardData?.items ?? []);
+      const file = items.find((item) => item.kind === "file" && item.type.startsWith("image/"))?.getAsFile();
+      if (!file) return;
+      event.preventDefault();
+      void handleFileRef.current(file);
+    }
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, []);
+
   async function useSample() {
     if (!confirmReplace()) return;
     setLoading(true);
@@ -217,7 +234,7 @@ export function ScanStep({ ingredients, setIngredients, preview, setPreview, mod
           >
             <span className="grid h-14 w-14 place-items-center rounded-2xl bg-mint text-moss"><ImagePlus className="h-6 w-6" /></span>
             <span className="font-serif text-xl text-ink">Drop a photo here, or click to upload</span>
-            <span className="text-xs text-muted">JPG, PNG or WEBP · processed in your browser, then recognised</span>
+            <span className="text-xs text-muted">JPG, PNG or WEBP · upload, drop or paste · processed in your browser</span>
           </button>
         )}
         <input
