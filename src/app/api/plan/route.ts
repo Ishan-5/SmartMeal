@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 
 import { generatePlan, isAiEnabled } from "@/lib/ai";
 import { consumeRateLimit, requestKey } from "@/lib/rate-limit";
+import { isSameOriginRequest } from "@/lib/security";
 import type { Household, Ingredient } from "@/lib/types";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 function cleanIngredients(value: unknown): Ingredient[] {
   if (!Array.isArray(value)) return [];
@@ -35,6 +37,9 @@ function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback
 }
 
 export async function POST(request: Request) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  }
   if (isAiEnabled()) {
     const limit = consumeRateLimit(`plan:${requestKey(request)}`, 30, 60 * 60 * 1000);
     if (!limit.allowed) {

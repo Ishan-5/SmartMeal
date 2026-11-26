@@ -2,12 +2,17 @@ import { NextResponse } from "next/server";
 
 import { isAiEnabled, recogniseIngredients } from "@/lib/ai";
 import { consumeRateLimit, requestKey } from "@/lib/rate-limit";
+import { isSameOriginRequest } from "@/lib/security";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const allowedMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 export async function POST(request: Request) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  }
   if (isAiEnabled()) {
     const limit = consumeRateLimit(`scan:${requestKey(request)}`, 30, 60 * 60 * 1000);
     if (!limit.allowed) {
