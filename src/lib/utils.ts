@@ -16,3 +16,8 @@ export function initialiseName(name: string): string {
     .slice(0, 2)
     .join("");
 }
+
+/** Fallback video link when no exact recipe URL is known. */
+export function youtubeSearchUrl(recipeName: string): string {
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${recipeName} recipe`)}`;
+}
