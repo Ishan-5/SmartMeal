@@ -2,11 +2,24 @@ import { NextResponse } from "next/server";
 
 import { createSalt, hashPassword, startSession } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { consumeRateLimit, requestKey } from "@/lib/rate-limit";
+import { isSameOriginRequest } from "@/lib/security";
 import { isValidEmail } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  }
+  const limit = consumeRateLimit(`signup:${requestKey(request)}`, 10, 60 * 60 * 1000);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Too many accounts created from this network. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
+  }
+
   let body: { name?: unknown; email?: unknown; password?: unknown };
   try {
     body = (await request.json()) as typeof body;

@@ -1,11 +1,24 @@
 import { NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
+import { consumeRateLimit, requestKey } from "@/lib/rate-limit";
+import { isSameOriginRequest } from "@/lib/security";
 import { isValidEmail } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  }
+  const limit = consumeRateLimit(`waitlist:${requestKey(request)}`, 10, 60 * 60 * 1000);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Too many signups right now. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
+  }
+
   let body: { email?: unknown; source?: unknown };
   try {
     body = (await request.json()) as typeof body;
