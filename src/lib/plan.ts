@@ -38,6 +38,7 @@ const ALIASES: Record<string, string> = {
   flatbread: "flatbreads",
   flatbreads: "flatbreads",
   "olive oil": "olive oil",
+  oil: "olive oil",
   "mixed herbs": "mixed herbs",
   herbs: "mixed herbs",
   salmon: "salmon",
@@ -70,6 +71,9 @@ export function servingCount(household: Household): number {
 }
 
 function roundQuantity(value: number, unit: string): number {
+  // Zero must stay zero — otherwise food you already have enough of still
+  // appears in the shopping list as "1 pcs".
+  if (value <= 0) return 0;
   if (unit === "pcs") return Math.max(1, Math.ceil(value));
   if (unit === "g" || unit === "ml") return Math.ceil(value / 10) * 10;
   return Math.round(value * 10) / 10;
