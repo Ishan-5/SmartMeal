@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 520" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#EFE8DA"/><stop offset="1" stop-color="#DED3BE"/></linearGradient>
+    <linearGradient id="board" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#E5C79B"/><stop offset="1" stop-color="#C99F6C"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%"><feGaussianBlur stdDeviation="12"/></filter>
+  </defs>
+  <rect width="640" height="520" rx="32" fill="url(#bg)"/>
+  <rect x="40" y="40" width="560" height="440" rx="24" fill="#F6F0E5" opacity=".55"/>
+  <ellipse cx="330" cy="286" rx="250" ry="180" fill="#8E7457" opacity=".16" filter="url(#shadow)"/>
+
+  <!-- board -->
+  <g transform="translate(110 128) rotate(-3)">
+    <rect x="0" y="0" width="430" height="270" rx="26" fill="url(#board)"/>
+    <rect x="14" y="14" width="402" height="242" rx="18" fill="#EBD2AC"/>
+    <path d="M38 232c96-14 200-14 350 0" stroke="#D8B386" stroke-width="3" opacity=".7"/>
+    <circle cx="404" cy="28" r="9" fill="#C99F6C"/>
+
+    <!-- chopped tomatoes -->
+    <g transform="translate(40 46)">
+      <circle cx="38" cy="38" r="36" fill="#C65F47"/><circle cx="38" cy="38" r="27" fill="#E08A6C"/>
+      <path d="M38 11v54M11 38h54M20 20l36 36M56 20 20 56" stroke="#F4B49A" stroke-width="3"/>
+      <circle cx="116" cy="34" r="30" fill="#D47152"/><circle cx="116" cy="34" r="22" fill="#E99575"/>
+      <path d="M116 12v44M94 34h44" stroke="#F4B49A" stroke-width="3"/>
+      <circle cx="82" cy="100" r="28" fill="#C65F47"/><circle cx="82" cy="100" r="20" fill="#E08A6C"/>
+    </g>
+
+    <!-- herbs -->
+    <g transform="translate(258 40)" fill="#5D8B55">
+      <path d="M44 0c-26 24-30 60-4 82 24-22 28-58 4-82Z"/>
+      <path d="M10 30C-6 54 0 84 22 94c14-26 10-52-12-64Z" fill="#72A067"/>
+      <path d="M82 26c20 20 18 52-2 66-16-24-14-50 2-66Z" fill="#6B975F"/>
+      <path d="M42 14v72" stroke="#A9C79A" stroke-width="3"/>
+    </g>
+
+    <!-- knife -->
+    <g transform="translate(246 174) rotate(-8)">
+      <path d="M0 12 150 0l16 14-166 12Z" fill="#B9C2BC"/>
+      <path d="M0 12 150 0" stroke="#E6ECE7" stroke-width="4"/>
+      <rect x="-56" y="10" width="62" height="24" rx="10" fill="#3F5C4B"/>
+      <circle cx="-42" cy="22" r="3" fill="#8CA898"/><circle cx="-28" cy="22" r="3" fill="#8CA898"/>
+    </g>
+
+    <!-- spinach leaves -->
+    <g transform="translate(44 166)" fill="#5D8B55">
+      <path d="M0 46C-18 10 8-10 40 4c2 26-12 38-40 42Z"/>
+      <path d="M44 52C36 18 62 2 88 18c-4 24-20 34-44 34Z" fill="#72A067"/>
+      <path d="M88 56c8-30 36-34 48-12-16 16-32 22-48 12Z" fill="#6B975F"/>
+    </g>
+  </g>
+
+  <!-- linen napkin -->
+  <path d="M474 360c36-12 68-6 92 8l-8 92c-30 8-58 2-84-10Z" fill="#EDE4D2"/>
+  <path d="M482 406c26 8 54 10 78 4" stroke="#D8CBB4" stroke-width="3"/>
+
+  <!-- olive oil bottle -->
+  <g transform="translate(52 344)">
+    <rect x="18" y="0" width="26" height="26" rx="5" fill="#3F5C4B"/>
+    <path d="M8 26h46l10 26v70H0V52Z" fill="#6F8E5C" opacity=".9"/>
+    <rect x="10" y="60" width="44" height="34" rx="4" fill="#F3ECDC" opacity=".9"/>
+    <path d="M18 74h28" stroke="#8CA898" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
