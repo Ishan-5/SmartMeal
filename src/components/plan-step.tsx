@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Clock3,
   Copy,
+  Download,
   HeartPulse,
   LoaderCircle,
   RotateCcw,
@@ -15,7 +16,7 @@ import {
   Youtube,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { formatQuantity } from "@/lib/plan";
 import type { GroceryItem, Household, MealPlan } from "@/lib/types";
@@ -50,7 +51,21 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
   const [expanded, setExpanded] = useState<string | null>(null);
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveError, setSaveError] = useState("");
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const planKey = `${plan.summary.days}:${plan.days.map((meal) => meal.recipe.id).join("|")}`;
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`smartmeal-checked:${planKey}`);
+      const values = stored ? (JSON.parse(stored) as string[]) : [];
+      setChecked(new Set(values));
+    } catch {
+      setChecked(new Set());
+    }
+  }, [planKey]);
 
   function toggleCheck(item: GroceryItem) {
     const key = groceryKey(item);
@@ -58,30 +73,61 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
       const next = new Set(current);
       if (next.has(key)) next.delete(key);
       else next.add(key);
+      try {
+        localStorage.setItem(`smartmeal-checked:${planKey}`, JSON.stringify([...next]));
+      } catch {
+        // Checked state is a convenience; the plan still works without storage.
+      }
       return next;
     });
   }
 
   async function savePlan() {
     setSaveState("saving");
+    setSaveError("");
+    setSessionExpired(false);
     try {
       const response = await fetch("/api/plans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan, ingredients, household }),
       });
-      if (!response.ok) throw new Error("Could not save your plan.");
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      if (response.status === 401) {
+        setSessionExpired(true);
+        throw new Error("Your session expired. Log in to save this plan.");
+      }
+      if (!response.ok) throw new Error(data.error ?? "Could not save your plan.");
       setSaveState("saved");
-    } catch {
+    } catch (cause) {
+      setSaveError(cause instanceof Error ? cause.message : "Could not save your plan.");
       setSaveState("error");
     }
   }
 
-  async function copyList() {
+  function listText() {
     const lines = plan.groceries.map((item) => `• ${item.name} — ${formatQuantity(item.buy, item.unit)}`);
-    await navigator.clipboard.writeText(`SmartMeal shopping list\n${lines.join("\n")}`);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 2000);
+    return `SmartMeal shopping list\n${plan.summary.days} days · ${plan.summary.people} ${plan.summary.people === 1 ? "person" : "people"}\n\n${lines.join("\n")}`;
+  }
+
+  async function copyList() {
+    try {
+      await navigator.clipboard.writeText(listText());
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  function downloadList() {
+    const blob = new Blob([listText()], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "smartmeal-shopping-list.txt";
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -116,17 +162,19 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
 
       <div className="mt-10">
         <div className="flex items-center justify-between">
-          <p className="field-label">This week</p>
+          <p className="field-label">Your {plan.summary.days}-day plan</p>
           <p className="text-xs text-muted">{plan.summary.days} days · {plan.summary.people} {plan.summary.people === 1 ? "person" : "people"}</p>
         </div>
         <div className="mt-4 space-y-3">
-          {plan.days.map((meal) => (
+          {plan.days.map((meal, index) => (
             <article key={`${meal.day}-${meal.recipe.id}`} className="overflow-hidden rounded-3xl border border-moss/10 bg-paper">
               <button
                 type="button"
+                id={`meal-button-${index}`}
                 onClick={() => setExpanded(expanded === meal.recipe.id ? null : meal.recipe.id)}
                 className="flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-cream/40"
                 aria-expanded={expanded === meal.recipe.id}
+                aria-controls={`meal-panel-${index}`}
               >
                 <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-mint text-2xl">{meal.recipe.emoji}</span>
                 <div className="min-w-0 flex-1">
@@ -149,7 +197,7 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
                 <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted transition-transform", expanded === meal.recipe.id && "rotate-180")} />
               </button>
               {expanded === meal.recipe.id && (
-                <div className="border-t border-moss/10 bg-cream/40 px-5 py-5">
+                <div id={`meal-panel-${index}`} role="region" aria-labelledby={`meal-button-${index}`} className="border-t border-moss/10 bg-cream/40 px-5 py-5">
                   <p className="field-label">For {meal.servings} {meal.servings === 1 ? "serving" : "servings"}</p>
                   <ol className="mt-2 space-y-2">
                     {meal.recipe.steps.map((step, index) => (
@@ -187,9 +235,15 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
             <p className="field-label">Grocery list · buy only the gaps</p>
             <p className="text-xs text-muted">Quantities are scaled for your household.</p>
           </div>
-          <button type="button" onClick={() => void copyList()} className="btn-outline !px-4 !py-2 text-xs">
-            {copied ? <><Check className="h-3.5 w-3.5" /> Copied</> : <><Copy className="h-3.5 w-3.5" /> Copy list</>}
-          </button>
+          <div className="flex gap-2">
+            <button type="button" onClick={downloadList} className="btn-outline !px-4 !py-2 text-xs" aria-label="Download shopping list">
+              <Download className="h-3.5 w-3.5" />
+            </button>
+            <button type="button" onClick={() => void copyList()} className="btn-outline !px-4 !py-2 text-xs">
+              {copied ? <><Check className="h-3.5 w-3.5" /> Copied</> : <><Copy className="h-3.5 w-3.5" /> Copy list</>}
+            </button>
+            <span className="sr-only" aria-live="polite">{copied ? "Shopping list copied to clipboard." : ""}</span>
+          </div>
         </div>
 
         {plan.groceries.length ? (
@@ -202,8 +256,9 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
                   key={key}
                   type="button"
                   onClick={() => toggleCheck(item)}
+                  aria-pressed={done}
                   className={cn(
-                    "flex w-full items-center gap-3 border-b border-moss/10 bg-paper px-4 py-3 text-left last:border-b-0 transition-colors hover:bg-cream/40",
+                    "flex w-full flex-wrap items-center gap-x-3 gap-y-1 border-b border-moss/10 bg-paper px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-cream/40",
                     done && "opacity-50",
                   )}
                 >
@@ -211,9 +266,10 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
                     {done && <Check className="h-3 w-3" />}
                   </span>
                   <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", categoryColour[item.category] ?? "bg-sage")} />
-                  <span className={cn("flex-1 text-sm font-medium text-ink", done && "line-through")}>{item.name}</span>
-                  <span className="text-xs text-muted">need {formatQuantity(item.need, item.unit)} · have {formatQuantity(item.have, item.unit)}</span>
-                  <span className="w-20 text-right text-sm font-semibold text-moss">{formatQuantity(item.buy, item.unit)}</span>
+                  <span className={cn("min-w-0 flex-1 text-sm font-medium text-ink", done && "line-through")}>{item.name}</span>
+                  <span className="shrink-0 text-right text-sm font-semibold text-moss sm:w-20">{formatQuantity(item.buy, item.unit)}</span>
+                  <span className="w-full text-[11px] text-muted sm:hidden">need {formatQuantity(item.need, item.unit)} · have {formatQuantity(item.have, item.unit)}</span>
+                  <span className="hidden text-xs text-muted sm:inline">need {formatQuantity(item.need, item.unit)} · have {formatQuantity(item.have, item.unit)}</span>
                 </button>
               );
             })}
@@ -240,6 +296,13 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
           <Link href="/login?next=/app" className="btn-primary">Log in to save this plan</Link>
         )}
       </div>
+
+      {saveError && (
+        <p className="mt-4 rounded-xl bg-clay/10 px-4 py-3 text-xs text-clay" role="alert">
+          {saveError}{" "}
+          {sessionExpired && <Link href="/login?next=/app" className="font-semibold underline">Log in again</Link>}
+        </p>
+      )}
     </div>
   );
 }
