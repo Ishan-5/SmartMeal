@@ -74,6 +74,7 @@ export function HouseholdStep({ household, setHousehold, ingredientCount, onBack
                 key={option.value}
                 type="button"
                 onClick={() => patch({ portions: option.value })}
+                aria-pressed={household.portions === option.value}
                 className={cn(
                   "rounded-2xl border p-4 text-left transition-all",
                   household.portions === option.value
@@ -96,6 +97,7 @@ export function HouseholdStep({ household, setHousehold, ingredientCount, onBack
                 key={days}
                 type="button"
                 onClick={() => patch({ days })}
+                aria-pressed={household.days === days}
                 className={cn(
                   "rounded-full px-5 py-2.5 text-sm font-semibold transition-all",
                   household.days === days ? "bg-moss text-paper" : "bg-cream text-muted hover:bg-mint",
@@ -115,6 +117,7 @@ export function HouseholdStep({ household, setHousehold, ingredientCount, onBack
                 key={option.value}
                 type="button"
                 onClick={() => patch({ focus: option.value })}
+                aria-pressed={household.focus === option.value}
                 className={cn(
                   "rounded-2xl border p-4 text-left transition-all",
                   household.focus === option.value

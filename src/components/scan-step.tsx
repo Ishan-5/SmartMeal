@@ -83,23 +83,35 @@ export function ScanStep({ ingredients, setIngredients, preview, setPreview, mod
     }
   }
 
+  function confirmReplace(): boolean {
+    return !ingredients.length || window.confirm("Replace your current ingredient list with this photo?");
+  }
+
   async function handleFile(file?: File) {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setError("Please choose an image file.");
       return;
     }
+    if (file.size > 10 * 1024 * 1024) {
+      setError("That photo is too large. Try one under 10 MB.");
+      return;
+    }
+    if (!confirmReplace()) return;
     setError("");
+    setLoading(true);
     try {
       const compressed = await compressImage(file);
       setPreview(compressed);
       await analyse(compressed);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not use that image.");
+      setLoading(false);
     }
   }
 
   async function useSample() {
+    if (!confirmReplace()) return;
     setLoading(true);
     setError("");
     try {
@@ -179,13 +191,23 @@ export function ScanStep({ ingredients, setIngredients, preview, setPreview, mod
                 <p className="text-sm font-semibold text-moss">Reading your ingredients…</p>
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className="absolute bottom-3 right-3 rounded-full bg-paper px-4 py-2 text-xs font-semibold text-moss shadow-card"
-            >
-              Change photo
-            </button>
+            <div className="absolute bottom-3 right-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPreview(null)}
+                className="rounded-full bg-paper/90 px-3 py-2 text-xs font-semibold text-muted shadow-card transition-colors hover:text-clay"
+                aria-label="Remove photo"
+              >
+                Remove
+              </button>
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="rounded-full bg-paper px-4 py-2 text-xs font-semibold text-moss shadow-card"
+              >
+                Change photo
+              </button>
+            </div>
           </div>
         ) : (
           <button
@@ -202,8 +224,12 @@ export function ScanStep({ ingredients, setIngredients, preview, setPreview, mod
           ref={inputRef}
           type="file"
           accept="image/*"
+          capture="environment"
           className="hidden"
-          onChange={(event) => void handleFile(event.target.files?.[0])}
+          onChange={(event) => {
+            void handleFile(event.target.files?.[0]);
+            event.target.value = "";
+          }}
         />
       </div>
 
@@ -212,19 +238,19 @@ export function ScanStep({ ingredients, setIngredients, preview, setPreview, mod
           <Sparkles className="h-3.5 w-3.5" /> Use a sample fridge
         </button>
         {note && <p className="text-xs text-muted">{note}</p>}
-        {error && <p className="text-xs font-medium text-clay">{error}</p>}
+        {error && <p className="text-xs font-medium text-clay" role="alert">{error}</p>}
       </div>
 
-      {ingredients.length > 0 && (
-        <div className="mt-10 border-t border-moss/10 pt-8">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="field-label">Recognized inventory</p>
-              <p className="text-xs text-muted">Check the quantities and edit anything we got wrong.</p>
-            </div>
-            <span className="rounded-full bg-mint px-3 py-1 text-xs font-semibold text-moss">{ingredients.length} items</span>
+      <div className="mt-10 border-t border-moss/10 pt-8">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="field-label">Recognized inventory</p>
+            <p className="text-xs text-muted">Check the quantities and edit anything we got wrong.</p>
           </div>
+          <span className="rounded-full bg-mint px-3 py-1 text-xs font-semibold text-moss">{ingredients.length} items</span>
+        </div>
 
+        {ingredients.length ? (
           <div className="mt-5 grid gap-2 sm:grid-cols-2">
             {ingredients.map((item, index) => (
               <div key={`${item.name}-${index}`} className="flex items-center gap-2 rounded-2xl border border-moss/10 bg-paper px-3 py-2">
@@ -238,7 +264,7 @@ export function ScanStep({ ingredients, setIngredients, preview, setPreview, mod
                 <input
                   aria-label={`Quantity of ${item.name}`}
                   type="number"
-                  min="0"
+                  min="0.1"
                   step="any"
                   value={item.quantity}
                   onChange={(event) => updateIngredient(index, { quantity: Number(event.target.value) })}
@@ -253,7 +279,7 @@ export function ScanStep({ ingredients, setIngredients, preview, setPreview, mod
                 <button
                   type="button"
                   onClick={() => setIngredients(ingredients.filter((_, i) => i !== index))}
-                  className="text-muted transition-colors hover:text-clay"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:bg-cream hover:text-clay"
                   aria-label={`Remove ${item.name}`}
                 >
                   <X className="h-4 w-4" />
@@ -261,23 +287,27 @@ export function ScanStep({ ingredients, setIngredients, preview, setPreview, mod
               </div>
             ))}
           </div>
+        ) : (
+          <div className="mt-5 rounded-2xl bg-mint/50 p-6 text-center text-sm text-moss">
+            No ingredients yet. Scan a photo or add your first item below.
+          </div>
+        )}
 
-          <form onSubmit={addIngredient} className="mt-4 flex flex-wrap gap-2">
-            <input value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="Add an ingredient…" className="input !w-auto flex-1 !py-2 text-sm" />
-            <input type="number" min="0" step="any" value={newQuantity} onChange={(event) => setNewQuantity(event.target.value)} className="input !w-20 !py-2 text-sm" aria-label="Quantity" />
+        <form onSubmit={addIngredient} className="mt-4 flex flex-wrap gap-2">
+            <input value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="Add an ingredient…" className="input !w-auto flex-1 !py-2 text-sm" aria-label="Ingredient name" />
+            <input type="number" min="0.1" step="any" value={newQuantity} onChange={(event) => setNewQuantity(event.target.value)} className="input !w-20 !py-2 text-sm" aria-label="Quantity" />
             <select value={newUnit} onChange={(event) => setNewUnit(event.target.value)} className="input !w-24 !py-2 text-sm" aria-label="Unit">
               {["pcs", "g", "ml", "tbsp"].map((unit) => <option key={unit} value={unit}>{unit}</option>)}
             </select>
             <button type="submit" className="btn-outline !px-4 !py-2 text-xs"><Plus className="h-4 w-4" /> Add</button>
           </form>
 
-          <div className="mt-8 flex justify-end">
-            <button type="button" onClick={onNext} disabled={!ingredients.length} className="btn-primary disabled:cursor-not-allowed disabled:opacity-40">
-              Continue to household <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
+        <div className="mt-8 flex justify-end">
+          <button type="button" onClick={onNext} disabled={!ingredients.length} className="btn-primary disabled:cursor-not-allowed disabled:opacity-40">
+            Continue to household <ArrowRight className="h-4 w-4" />
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
