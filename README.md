@@ -365,3 +365,8 @@ Issues and pull requests are welcome at [github.com/Ishan-5/SmartMeal](https://g
 <sub>Built with free tiers, good defaults and a lot of attention to the 5pm question.</sub>
 
 </div>
+
+<p align="center">
+  Built by <b><a href="https://github.com/Ishan-5">Devansh Kumar Pandey (Ishan)</a></b> · <a href="https://linkedin.com/in/devansh584">LinkedIn</a>
+</p>
+
