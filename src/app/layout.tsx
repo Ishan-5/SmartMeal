@@ -10,7 +10,7 @@ const siteUrl = (
 const siteName = "SmartMeal";
 const description =
   "Photograph your fridge, set your household, and get a protein-forward weekly meal plan with an exact grocery list. Free to try, no sign-up needed.";
-const socialImage = "/images/hero-kitchen.svg";
+const socialImage = "/images/Mainimage.png";
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     url: siteUrl,
     title: `${siteName} · Your AI kitchen assistant`,
     description: "Snap your ingredients. Get a week of meals built around your household and your fridge.",
-    images: [{ url: socialImage, width: 640, height: 560, alt: "SmartMeal kitchen" }],
+    images: [{ url: socialImage, width: 1216, height: 833, alt: "SmartMeal kitchen" }],
   },
   twitter: {
     card: "summary_large_image",

@@ -133,7 +133,14 @@ export default function Home() {
             <div className="relative mx-auto w-full max-w-[560px] animate-fade-up [animation-delay:120ms]">
               <div className="panel overflow-hidden p-3 sm:p-4">
                 <div className="relative overflow-hidden rounded-[26px] bg-mint">
-                  <img src="/images/hero-kitchen.svg" alt="Fresh vegetables, eggs, grains and pantry ingredients on a kitchen counter" width={640} height={560} className="block h-auto w-full" />
+                  <img
+                    src="/images/Mainimage.png"
+                    alt="Fresh vegetables, eggs, grains and pantry ingredients ready for meal planning"
+                    width={1216}
+                    height={833}
+                    loading="eager"
+                    className="block h-auto w-full"
+                  />
                 </div>
               </div>
 
@@ -270,7 +277,14 @@ export default function Home() {
             <div className="relative">
               <div className="panel overflow-hidden p-3">
                 <div className="overflow-hidden rounded-[26px] bg-mint">
-                  <img src="/images/kitchen-prep.svg" alt="Fresh vegetables being prepared in a warm home kitchen" className="block w-full" />
+                  <img
+                    src="/images/image.png"
+                    alt="Fresh ingredients being prepared in a warm home kitchen"
+                    width={1107}
+                    height={835}
+                    loading="lazy"
+                    className="block h-auto w-full"
+                  />
                 </div>
               </div>
               <div className="absolute -bottom-6 -right-2 rounded-2xl border border-moss/10 bg-paper px-5 py-4 shadow-soft sm:-right-6">
