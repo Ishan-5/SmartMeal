@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createSalt, hashPassword, startSession } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { log } from "@/lib/logger";
 import { consumeRateLimit, requestKey } from "@/lib/rate-limit";
 import { isSameOriginRequest } from "@/lib/security";
 import { isValidEmail } from "@/lib/utils";
@@ -49,8 +50,10 @@ export async function POST(request: Request) {
     const salt = createSalt();
     const user = await db.createUser(name, email, hashPassword(password, salt), salt);
     await startSession(user.id);
+    log.info("Account created", { userId: user.id });
     return NextResponse.json({ ok: true, user: { id: user.id, name: user.name, email: user.email } });
-  } catch {
+  } catch (error) {
+    log.error("Signup failed", { error: String(error) });
     return NextResponse.json({ error: "Could not create your account right now. Please try again." }, { status: 500 });
   }
 }
