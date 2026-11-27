@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Leaf } from "lucide-react";
+import { Check, ShieldCheck } from "lucide-react";
 
+import { MarketingShell } from "@/components/marketing-shell";
 import { pageMeta } from "@/lib/page-meta";
 
 export const metadata: Metadata = pageMeta({
@@ -9,6 +10,8 @@ export const metadata: Metadata = pageMeta({
   description: "What SmartMeal collects, how it is processed and the choices you have.",
   path: "/privacy",
 });
+
+const highlights = ["We never store your photos", "We do not sell your data", "Deletion available on request"];
 
 const sections = [
   {
@@ -35,29 +38,49 @@ const sections = [
 
 export default function PrivacyPage() {
   return (
-    <main id="main-content" className="min-h-screen bg-cream">
-      <div className="shell max-w-3xl py-14 sm:py-20">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-moss">
-          <ArrowLeft className="h-4 w-4" /> Back to SmartMeal
-        </Link>
-        <div className="mt-10 flex items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-moss text-paper"><Leaf className="h-5 w-5" /></span>
-          <span className="font-serif text-2xl font-semibold">SmartMeal</span>
+    <MarketingShell>
+      <main id="main-content" className="py-14 sm:py-20">
+        <div className="shell max-w-3xl">
+          <p className="eyebrow"><ShieldCheck className="h-3.5 w-3.5" /> Legal · Privacy</p>
+          <h1 className="mt-6 font-serif text-4xl tracking-tight text-ink sm:text-5xl">Privacy policy</h1>
+          <p className="muted-text mt-4 text-sm">Last updated 27 November 2026. Plain language, no fine print tricks.</p>
+
+          <div className="mt-8 grid gap-3 sm:grid-cols-3">
+            {highlights.map((item) => (
+              <div key={item} className="flex items-center gap-2 rounded-2xl border border-moss/10 bg-paper px-4 py-3 text-xs font-semibold text-ink">
+                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-mint text-moss"><Check className="h-3 w-3" strokeWidth={3} /></span>
+                {item}
+              </div>
+            ))}
+          </div>
+
+          <nav aria-label="Privacy sections" className="mt-8 flex flex-wrap gap-2">
+            {sections.map((section, index) => (
+              <a
+                key={section.title}
+                href={`#privacy-${index + 1}`}
+                className="rounded-full border border-moss/15 bg-paper px-3 py-1.5 text-[11px] font-semibold text-muted transition-colors hover:border-moss/40 hover:text-moss"
+              >
+                {String(index + 1).padStart(2, "0")} {section.title}
+              </a>
+            ))}
+          </nav>
+
+          <div className="panel mt-8 divide-y divide-moss/10 px-6 sm:px-10">
+            {sections.map((section, index) => (
+              <section key={section.title} id={`privacy-${index + 1}`} className="scroll-mt-24 py-7">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-clay">0{index + 1}</p>
+                <h2 className="mt-2 font-serif text-xl text-ink">{section.title}</h2>
+                <p className="muted-text mt-3 text-sm">{section.body}</p>
+              </section>
+            ))}
+          </div>
+
+          <p className="muted-text mt-8 text-sm">
+            By using SmartMeal you agree to this policy and the <Link href="/terms" className="font-semibold text-moss hover:underline">terms of use</Link>.
+          </p>
         </div>
-        <h1 className="mt-8 font-serif text-4xl tracking-tight text-ink sm:text-5xl">Privacy policy</h1>
-        <p className="muted-text mt-4 text-sm">Last updated 27 November 2026.</p>
-        <div className="panel mt-10 divide-y divide-moss/10 px-6 sm:px-10">
-          {sections.map((section) => (
-            <section key={section.title} className="py-7">
-              <h2 className="font-serif text-xl text-ink">{section.title}</h2>
-              <p className="muted-text mt-3 text-sm">{section.body}</p>
-            </section>
-          ))}
-        </div>
-        <p className="muted-text mt-8 text-sm">
-          By using SmartMeal you agree to this policy and the <Link href="/terms" className="font-semibold text-moss hover:underline">terms of use</Link>.
-        </p>
-      </div>
-    </main>
+      </main>
+    </MarketingShell>
   );
 }
