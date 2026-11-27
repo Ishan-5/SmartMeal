@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { startSession, verifyPassword } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { log } from "@/lib/logger";
 import { consumeRateLimit, requestKey } from "@/lib/rate-limit";
 import { isSameOriginRequest } from "@/lib/security";
 
@@ -26,12 +27,20 @@ export async function POST(request: Request) {
 
   const email = String(body.email ?? "").trim().toLowerCase();
   const password = String(body.password ?? "");
-  const user = await db.findUserByEmail(email);
 
-  if (!user || !verifyPassword(password, user)) {
-    return NextResponse.json({ error: "Email or password is incorrect." }, { status: 401 });
+  try {
+    const user = await db.findUserByEmail(email);
+
+    if (!user || !verifyPassword(password, user)) {
+      log.warn("Login rejected", { reason: "invalid-credentials" });
+      return NextResponse.json({ error: "Email or password is incorrect." }, { status: 401 });
+    }
+
+    await startSession(user.id);
+    log.info("Login succeeded", { userId: user.id });
+    return NextResponse.json({ ok: true, user: { id: user.id, name: user.name, email: user.email } });
+  } catch (error) {
+    log.error("Login failed", { error: String(error) });
+    return NextResponse.json({ error: "Could not sign in right now. Please try again." }, { status: 500 });
   }
-
-  await startSession(user.id);
-  return NextResponse.json({ ok: true, user: { id: user.id, name: user.name, email: user.email } });
 }
