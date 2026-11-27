@@ -44,6 +44,9 @@ export async function GET(request: Request) {
       ok: healthy,
       status: healthy ? "healthy" : "degraded",
       requestId,
+      timestamp: new Date().toISOString(),
+      uptimeSeconds: Math.round(process.uptime()),
+      version: process.env.npm_package_version ?? "0.1.0",
       checks: {
         environment: { ok: environment.ok, errors: environment.errors, warnings: environment.warnings },
         database: { ok: database.ok, mode: database.mode },
