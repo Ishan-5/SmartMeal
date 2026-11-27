@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 
 import { AuthForm } from "@/components/auth-form";
+import { pageMeta } from "@/lib/page-meta";
 
-export const metadata: Metadata = { title: "Log in" };
+export const metadata: Metadata = pageMeta({
+  title: "Log in",
+  description: "Log in to reopen your saved SmartMeal plans.",
+  path: "/login",
+  index: false,
+});
 
 export default async function LoginPage({
   searchParams,
