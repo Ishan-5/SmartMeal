@@ -4,7 +4,7 @@ export interface EnvironmentReport {
   warnings: string[];
 }
 
-const isProduction = process.env.NODE_ENV === "production";
+const isProduction = () => process.env.NODE_ENV === "production";
 
 function publicUrl(): string | undefined {
   return process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
@@ -15,7 +15,7 @@ export function inspectEnvironment(): EnvironmentReport {
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  if (!isProduction) {
+  if (!isProduction()) {
     return { ok: true, errors, warnings };
   }
 
