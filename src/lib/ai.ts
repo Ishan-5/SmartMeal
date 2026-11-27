@@ -1,7 +1,7 @@
+import { sanitiseIngredients, sanitiseMeals } from "./ai-output";
 import { SAMPLE_INGREDIENTS } from "./demo-data";
 import { assemblePlan, buildPlan } from "./plan";
-import type { Household, Ingredient, MealPlan, PlannedMeal, Recipe } from "./types";
-import { youtubeSearchUrl } from "./utils";
+import type { Household, Ingredient, MealPlan } from "./types";
 
 export type AiMode = "ai" | "demo";
 export type AiProvider = "groq" | "openrouter" | "gemini" | "openai" | "none";
@@ -251,31 +251,6 @@ function parseJson(text: string): Record<string, unknown> {
   return JSON.parse(cleaned) as Record<string, unknown>;
 }
 
-function cleanIngredients(value: unknown): Ingredient[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .flatMap((entry): Ingredient[] => {
-      const item = entry as Record<string, unknown>;
-      const name = String(item.name ?? "").trim();
-      const quantity = Number(item.quantity);
-      const unit = String(item.unit ?? "pcs").trim() || "pcs";
-      if (!name || !Number.isFinite(quantity) || quantity <= 0) return [];
-      return [{
-        name,
-        quantity,
-        unit,
-        confidence: typeof item.confidence === "number" ? item.confidence : 0.8,
-      }];
-    })
-    .slice(0, 20);
-}
-
-function validVideoUrl(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const url = value.trim();
-  return /^https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+/.test(url) ? url : null;
-}
-
 export async function recogniseIngredients(
   dataUrl: string,
   mimeType: string,
@@ -295,7 +270,7 @@ export async function recogniseIngredients(
       "List the food ingredients visible in this photo with realistic quantities.",
       { dataUrl, mimeType },
     );
-    const ingredients = cleanIngredients(parseJson(raw).ingredients);
+    const ingredients = sanitiseIngredients(parseJson(raw).ingredients);
     if (!ingredients.length) throw new Error("No ingredients found");
     return { ingredients, mode: "ai" };
   } catch (error) {
@@ -361,29 +336,8 @@ export async function generatePlan(
 
     if (!Array.isArray(parsed.days) || !parsed.days.length) throw new Error("No days returned");
 
-    const meals: PlannedMeal[] = parsed.days.slice(0, 7).map((entry, index) => {
-      const day = entry as Record<string, unknown>;
-      const name = String(day.name ?? "Protein bowl");
-      const ingredients = cleanIngredients(day.ingredients).map(({ name, quantity, unit }) => ({ name, quantity, unit }));
-      if (!ingredients.length) throw new Error("Meal has no ingredients");
-      const recipe: Recipe = {
-        id: `ai-meal-${index}-${name.replace(/\s+/g, "-").toLowerCase()}`,
-        name,
-        protein: Number(day.protein) || 30,
-        minutes: Number(day.minutes) || 20,
-        emoji: String(day.emoji ?? "🍽️"),
-        tags: Array.isArray(day.tags) ? day.tags.map(String) : ["AI planned"],
-        videoUrl: validVideoUrl(day.videoUrl) ?? youtubeSearchUrl(name),
-        ingredients,
-        steps: Array.isArray(day.steps) ? day.steps.map(String) : ["Cook with what you have."],
-      };
-      return {
-        day: String(day.day ?? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index]),
-        recipe,
-        servings: household.people,
-        protein: recipe.protein,
-      };
-    });
+    const meals = sanitiseMeals(parsed.days, household);
+    if (!meals.length) throw new Error("No usable meals returned");
 
     return { plan: assemblePlan(meals, inventory, household), mode: "ai", note: correctionNote };
   } catch (error) {
