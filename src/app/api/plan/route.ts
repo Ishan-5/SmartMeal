@@ -1,30 +1,13 @@
 import { NextResponse } from "next/server";
 
 import { generatePlan, isAiEnabled } from "@/lib/ai";
+import { sanitiseIngredients } from "@/lib/ai-output";
 import { consumeRateLimit, requestKey } from "@/lib/rate-limit";
 import { isSameOriginRequest } from "@/lib/security";
-import type { Household, Ingredient } from "@/lib/types";
+import type { Household } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-function cleanIngredients(value: unknown): Ingredient[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
-    .map((item) => {
-      const name = String(item.name ?? "").trim().slice(0, 80);
-      const quantity = Number(item.quantity);
-      const unit = String(item.unit ?? "pcs").trim().slice(0, 16) || "pcs";
-      return {
-        name,
-        quantity: Number.isFinite(quantity) ? Math.min(100_000, Math.max(0.1, quantity)) : 1,
-        unit,
-      };
-    })
-    .filter((item) => item.name.length > 0)
-    .slice(0, 30);
-}
 
 function integerInRange(value: unknown, min: number, max: number, fallback: number): number {
   const number = Number(value);
@@ -61,7 +44,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
-  const ingredients = cleanIngredients(body.ingredients);
+  const ingredients = sanitiseIngredients(body.ingredients, 30);
   if (!ingredients.length) {
     return NextResponse.json({ error: "Add at least one ingredient first." }, { status: 400 });
   }
