@@ -278,6 +278,8 @@ Never commit `.env.local`. `.gitignore` also covers `.env.*.local`.
 | `POST /api/auth/signup` | None | Creates account and starts session |
 | `POST /api/auth/login` | None | Starts session |
 | `POST /api/auth/logout` | Cookie | Ends session |
+| `GET /api/account/export` | Cookie | Downloads account data as JSON without password hashes or tokens |
+| `DELETE /api/account/delete` | Cookie + password | Deletes the account, plans, sessions and waitlist entry |
 | `GET /api/plans` | Cookie | Saved plan summaries |
 | `POST /api/plans` | Cookie | Saves a validated plan |
 | `GET /api/plans/[id]` | Cookie | Reopens a plan owned by the user |
