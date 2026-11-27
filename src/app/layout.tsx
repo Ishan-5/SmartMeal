@@ -40,7 +40,6 @@ export const metadata: Metadata = {
   ],
   applicationName: siteName,
   authors: [{ name: siteName }],
-  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     siteName,
