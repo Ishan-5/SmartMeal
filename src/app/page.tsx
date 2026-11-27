@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -17,6 +18,14 @@ import {
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { WaitlistForm } from "@/components/waitlist-form";
+import { pageMeta } from "@/lib/page-meta";
+
+export const metadata: Metadata = pageMeta({
+  title: "Snap. Plan. Eat well.",
+  description:
+    "Photograph your fridge, set your household, and get a protein-forward weekly meal plan with an exact grocery list.",
+  path: "/",
+});
 
 const recognised = ["Eggs", "Spinach", "Chicken", "Greek yogurt"];
 
