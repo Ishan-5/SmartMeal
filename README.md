@@ -16,6 +16,7 @@
 <p>
   <a href="#quick-start"><b>Run locally</b></a> ·
   <a href="#the-free-stack"><b>Why it's free</b></a> ·
+  <a href="#project-tree"><b>File tree</b></a> ·
   <a href="#deploy"><b>Deploy</b></a> ·
   <a href="https://github.com/Ishan-5/SmartMeal"><b>Star on GitHub</b></a>
 </p>
@@ -291,23 +292,89 @@ Errors are JSON: `{ "error": "Human-readable message" }`. Rate limits return `42
 
 ---
 
-## Under the hood
+## Project tree
 
 ```text
-src/app                 Routes, pages, metadata and API handlers
-src/components          Landing page, scan, household, plan and account UI
-src/lib/ai.ts           Provider chains, prompts and timeouts
-src/lib/plan.ts         Plan assembly, grocery math and ingredient aliases
-src/lib/db.ts           Supabase adapter + local JSON fallback
-src/lib/auth.ts         Password hashing and session cookies
-src/lib/rate-limit.ts   In-process abuse protection
-src/lib/env.ts          Production configuration validation
-src/lib/logger.ts       Structured JSON logs with request ids
-src/middleware.ts       Request id propagation
-tests/                  Vitest unit tests
-.github/workflows/       CI: audit, typecheck, tests, build
-supabase/schema.sql     Tables for users, sessions, waitlist and plans
+SmartMeal/
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── account/
+│   │   │   │   ├── delete/route.ts        # password-confirmed account deletion
+│   │   │   │   └── export/route.ts        # download your account data
+│   │   │   ├── admin/waitlist/route.ts    # bearer-protected CSV export
+│   │   │   ├── auth/
+│   │   │   │   ├── login/route.ts
+│   │   │   │   ├── logout/route.ts
+│   │   │   │   ├── me/route.ts
+│   │   │   │   └── signup/route.ts
+│   │   │   ├── plans/
+│   │   │   │   ├── [id]/route.ts          # reopen or delete one plan
+│   │   │   │   └── route.ts               # list or save plans
+│   │   │   ├── health/route.ts
+│   │   │   ├── plan/route.ts
+│   │   │   ├── scan/route.ts
+│   │   │   ├── status/route.ts
+│   │   │   └── waitlist/route.ts
+│   │   ├── app/                           # scan → household → plan workspace
+│   │   │   ├── layout.tsx
+│   │   │   └── page.tsx
+│   │   ├── login/ + signup/               # auth screens
+│   │   ├── privacy/ + terms/              # public legal pages
+│   │   ├── error.tsx
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   ├── loading.tsx
+│   │   ├── manifest.ts
+│   │   ├── not-found.tsx
+│   │   ├── page.tsx                       # landing page
+│   │   ├── robots.ts
+│   │   └── sitemap.ts
+│   ├── components/
+│   │   ├── auth-form.tsx
+│   │   ├── auth-shell.tsx
+│   │   ├── household-step.tsx
+│   │   ├── marketing-shell.tsx
+│   │   ├── plan-step.tsx
+│   │   ├── preview-card.tsx
+│   │   ├── saved-plans.tsx
+│   │   ├── scan-step.tsx
+│   │   ├── site-footer.tsx
+│   │   ├── site-header.tsx
+│   │   └── waitlist-form.tsx
+│   ├── lib/
+│   │   ├── account-data.ts                # export payload builder
+│   │   ├── ai-output.ts                   # AI response sanitizer
+│   │   ├── ai.ts                          # provider chains and prompts
+│   │   ├── auth-redirect.ts
+│   │   ├── auth.ts                        # hashing and session cookies
+│   │   ├── db.ts                          # Supabase adapter + local JSON fallback
+│   │   ├── demo-data.ts
+│   │   ├── env.ts                         # production config checks
+│   │   ├── ingredients.ts                 # pasted-list parser
+│   │   ├── logger.ts                      # structured JSON logs
+│   │   ├── page-meta.ts
+│   │   ├── plan.ts                        # grocery math and aliases
+│   │   ├── rate-limit.ts
+│   │   ├── security.ts
+│   │   ├── supabase.ts
+│   │   ├── types.ts
+│   │   └── utils.ts
+│   ├── instrumentation.ts                 # fail-fast production startup
+│   └── middleware.ts                      # request ids
+├── tests/                                 # Vitest unit tests
+├── supabase/schema.sql                    # users, sessions, waitlist, plans
+├── scripts/migrate.mjs                    # optional SQL migration helper
+├── docs/smartmeal-demo.gif
+├── public/images/                         # hero and product artwork
+├── .github/workflows/check.yml            # CI: audit, typecheck, tests, build
+├── .env.example
+├── next.config.mjs
+├── package.json
+└── README.md
 ```
+
+Key starting points: `src/app/page.tsx` for the landing page, `src/app/app/page.tsx` for the workspace, `src/lib/ai.ts` for AI orchestration, and `src/lib/db.ts` for persistence.
 
 <details>
 <summary><b>Security and limits</b></summary>
