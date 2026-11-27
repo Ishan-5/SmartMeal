@@ -3,7 +3,7 @@
 import { ArrowRight, CheckCircle2, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 
-import { cn } from "@/lib/utils";
+import { cn, isValidEmail } from "@/lib/utils";
 
 export function WaitlistForm({ compact = false, source = "website" }: { compact?: boolean; source?: string }) {
   const [email, setEmail] = useState("");
@@ -12,9 +12,14 @@ export function WaitlistForm({ compact = false, source = "website" }: { compact?
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (status === "loading") return;
-    setStatus("loading");
+    if (status === "loading" || status === "success") return;
     setMessage("");
+    if (!isValidEmail(email)) {
+      setStatus("error");
+      setMessage("Please enter a valid email address.");
+      return;
+    }
+    setStatus("loading");
     try {
       const response = await fetch("/api/waitlist", {
         method: "POST",
@@ -45,8 +50,11 @@ export function WaitlistForm({ compact = false, source = "website" }: { compact?
           placeholder="you@example.com"
           className={cn(
             "input flex-1",
+            status === "error" && "border-clay/60 focus:border-clay focus:ring-clay/10",
             compact ? "border-white/20 bg-white/10 text-paper placeholder:text-paper/50 focus:border-paper/50 focus:ring-white/10" : "",
           )}
+          aria-invalid={status === "error"}
+          aria-describedby={`waitlist-message-${source}`}
         />
         <button type="submit" className={cn(compact ? "btn-light shrink-0" : "btn-primary shrink-0")} disabled={status === "loading" || status === "success"}>
           {status === "loading" ? (
@@ -59,6 +67,7 @@ export function WaitlistForm({ compact = false, source = "website" }: { compact?
         </button>
       </form>
       <p
+        id={`waitlist-message-${source}`}
         className={cn(
           "mt-3 flex items-start gap-2 text-xs",
           status === "error" ? "text-clay" : compact ? "text-paper/60" : "text-muted",
