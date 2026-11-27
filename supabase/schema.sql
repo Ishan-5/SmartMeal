@@ -34,6 +34,7 @@ create table if not exists public.plans (
 );
 
 create index if not exists sessions_user_id_idx on public.sessions("userId");
+create index if not exists sessions_expires_at_idx on public.sessions("expiresAt");
 create index if not exists plans_user_created_idx on public.plans("userId", "createdAt" desc);
 create index if not exists waitlist_created_idx on public.waitlist("createdAt" desc);
 
