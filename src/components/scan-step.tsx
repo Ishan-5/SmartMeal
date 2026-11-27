@@ -4,6 +4,7 @@ import { ArrowRight, ImagePlus, LoaderCircle, Plus, Sparkles, X } from "lucide-r
 import { useEffect, useRef, useState } from "react";
 
 import { SAMPLE_PHOTO } from "@/lib/demo-data";
+import { parseIngredientList } from "@/lib/ingredients";
 import type { Ingredient } from "@/lib/types";
 import type { AiMode } from "@/lib/ai";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,7 @@ export function ScanStep({ ingredients, setIngredients, preview, setPreview, mod
   const [newName, setNewName] = useState("");
   const [newQuantity, setNewQuantity] = useState("1");
   const [newUnit, setNewUnit] = useState("pcs");
+  const [bulk, setBulk] = useState("");
 
   async function analyse(image: string) {
     setLoading(true);
@@ -169,6 +171,14 @@ export function ScanStep({ ingredients, setIngredients, preview, setPreview, mod
     setIngredients([...ingredients, { name, quantity, unit: newUnit, confidence: 1 }]);
     setNewName("");
     setNewQuantity("1");
+  }
+
+  function addBulk(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const items = parseIngredientList(bulk);
+    if (!items.length) return;
+    setIngredients([...ingredients, ...items]);
+    setBulk("");
   }
 
   return (
@@ -318,6 +328,24 @@ export function ScanStep({ ingredients, setIngredients, preview, setPreview, mod
             </select>
             <button type="submit" className="btn-outline !px-4 !py-2 text-xs"><Plus className="h-4 w-4" /> Add</button>
           </form>
+
+        <form onSubmit={addBulk} className="mt-3 rounded-2xl border border-moss/10 bg-cream/60 p-3">
+          <label className="field-label !mb-1.5" htmlFor="bulk-ingredients">Or paste a list</label>
+          <textarea
+            id="bulk-ingredients"
+            value={bulk}
+            onChange={(event) => setBulk(event.target.value)}
+            rows={2}
+            placeholder="eggs, 500g chicken, spinach, 2 tbsp olive oil"
+            className="input !py-2 text-sm"
+          />
+          <div className="mt-2 flex items-center justify-between gap-3">
+            <p className="text-[11px] text-muted">Comma, semicolon or one per line.</p>
+            <button type="submit" disabled={!bulk.trim()} className="btn-outline !px-4 !py-2 text-xs disabled:opacity-40">
+              <Plus className="h-4 w-4" /> Add list
+            </button>
+          </div>
+        </form>
 
         <div className="mt-8 flex justify-end">
           <button type="button" onClick={onNext} disabled={!ingredients.length} className="btn-primary disabled:cursor-not-allowed disabled:opacity-40">
