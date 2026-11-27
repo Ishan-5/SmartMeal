@@ -185,6 +185,17 @@ export const db = {
     });
   },
 
+  async countSessions(userId: string) {
+    if (supabaseEnabled) {
+      const rows = await sbQuery<Array<{ token: string }>>(`sessions?select=token&userId=eq.${enc(userId)}`);
+      return rows.length;
+    }
+    const database = await localRead();
+    return database.sessions.filter(
+      (session) => session.userId === userId && new Date(session.expiresAt).getTime() >= Date.now(),
+    ).length;
+  },
+
   async addToWaitlist(email: string, source: string) {
     const normalised = email.toLowerCase();
     if (supabaseEnabled) {
@@ -213,6 +224,16 @@ export const db = {
       await localWrite(database);
       return { added: true, entry };
     });
+  },
+
+  async findWaitlistEntry(email: string) {
+    const normalised = email.toLowerCase();
+    if (supabaseEnabled) {
+      const rows = await sbQuery<WaitlistEntry[]>(`waitlist?select=*&email=eq.${enc(normalised)}&limit=1`);
+      return rows[0];
+    }
+    const database = await localRead();
+    return database.waitlist.find((entry) => entry.email === normalised);
   },
 
   async savePlan(userId: string, plan: MealPlan, ingredients: Ingredient[], household: Household) {
