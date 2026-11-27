@@ -15,11 +15,17 @@ function describe(provider: string) {
 }
 
 export async function GET() {
+  const scanProvider = getScanProvider();
+  const planProvider = getPlanProvider();
+  const configurationOk = scanProvider !== "none" && planProvider !== "none";
+
   return NextResponse.json({
     ok: true,
+    configurationOk,
+    demoMode: !configurationOk,
     ai: {
-      scan: describe(getScanProvider()),
-      plan: describe(getPlanProvider()),
+      scan: describe(scanProvider),
+      plan: describe(planProvider),
     },
     storage: db.storageMode(),
     waitlistExport: Boolean(process.env.ADMIN_TOKEN),
