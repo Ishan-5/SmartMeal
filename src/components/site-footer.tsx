@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Leaf } from "lucide-react";
+import { Github, Leaf } from "lucide-react";
 
 export function SiteFooter() {
   return (
@@ -26,6 +26,14 @@ export function SiteFooter() {
             <Link href="/#our-story" className="text-sm text-muted hover:text-moss">Our story</Link>
             <Link href="/#faq" className="text-sm text-muted hover:text-moss">FAQ</Link>
             <Link href="/app" className="text-sm text-muted hover:text-moss">Try the demo</Link>
+            <a
+              href="https://github.com/Ishan-5/SmartMeal"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-moss"
+            >
+              <Github className="h-3.5 w-3.5" /> GitHub
+            </a>
           </div>
         </div>
 
