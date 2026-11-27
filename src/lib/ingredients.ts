@@ -17,17 +17,18 @@ export function parseIngredientList(value: string): Ingredient[] {
     .map((entry) => entry.trim())
     .filter(Boolean)
     .slice(0, 40)
-    .map((entry) => {
+    .flatMap((entry): Ingredient[] => {
       const match = entry.match(/^(\d+(?:\.\d+)?)\s*(kg|g|ml|l|tbsp|tsp|pcs)?\s*(.*)$/i);
       const name = (match?.[3] ?? entry).trim();
-      if (!name) return null;
+      if (!name) return [];
 
-      return {
-        name,
-        quantity: match ? Number(match[1]) : 1,
-        unit: match?.[2] ? UNIT_ALIASES[match[2].toLowerCase()] ?? "pcs" : "pcs",
-        confidence: 1,
-      } satisfies Ingredient;
-    })
-    .filter((item): item is Ingredient => item !== null);
+      return [
+        {
+          name,
+          quantity: match ? Number(match[1]) : 1,
+          unit: match?.[2] ? UNIT_ALIASES[match[2].toLowerCase()] ?? "pcs" : "pcs",
+          confidence: 1,
+        },
+      ];
+    });
 }
