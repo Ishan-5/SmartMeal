@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, FolderOpen, LoaderCircle, Trash2, X } from "lucide-react";
+import { CalendarDays, FolderOpen, LoaderCircle, Search, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import type { Household, Ingredient, MealPlan } from "@/lib/types";
@@ -33,6 +33,7 @@ export function SavedPlans({
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -103,6 +104,20 @@ export function SavedPlans({
     }
   }
 
+  const needle = query.trim().toLowerCase();
+  const visiblePlans = plans.filter((plan) => {
+    const searchable = [
+      new Date(plan.createdAt).toLocaleDateString(),
+      `${plan.summary.days} days`,
+      `${plan.summary.meals} meals`,
+      `${plan.summary.avgProtein}g protein`,
+      `${plan.summary.groceryItems} to buy`,
+    ]
+      .join(" ")
+      .toLowerCase();
+    return !needle || searchable.includes(needle);
+  });
+
   return (
     <>
       <button
@@ -133,15 +148,27 @@ export function SavedPlans({
               </button>
             </div>
 
+            <div className="mt-5 flex items-center gap-2 rounded-2xl border border-moss/15 bg-cream/60 px-4 py-2.5">
+              <Search className="h-4 w-4 shrink-0 text-muted" />
+              <label className="sr-only" htmlFor="saved-plan-search">Search saved plans</label>
+              <input
+                id="saved-plan-search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search by date, days or protein…"
+                className="w-full bg-transparent text-sm text-ink placeholder:text-muted/70 focus:outline-none"
+              />
+            </div>
+
             {error && <p className="mt-4 rounded-xl bg-clay/10 px-4 py-3 text-xs text-clay" role="alert">{error}</p>}
 
             {loading ? (
               <div className="mt-8 flex items-center justify-center gap-2 py-10 text-sm text-muted">
                 <LoaderCircle className="h-4 w-4 animate-spin" /> Loading your plans…
               </div>
-            ) : plans.length ? (
+            ) : visiblePlans.length ? (
               <div className="mt-6 space-y-3">
-                {plans.map((plan) => (
+                {visiblePlans.map((plan) => (
                   <article key={plan.id} className="flex items-center gap-3 rounded-2xl border border-moss/10 bg-cream/60 p-4">
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-mint text-moss">
                       <CalendarDays className="h-4 w-4" />
@@ -165,8 +192,10 @@ export function SavedPlans({
               </div>
             ) : (
               <div className="mt-8 rounded-2xl bg-mint/50 p-6 text-center">
-                <p className="font-serif text-lg text-moss">No saved plans yet</p>
-                <p className="mt-1 text-xs text-muted">Build a week, then save it from the plan screen.</p>
+                <p className="font-serif text-lg text-moss">{query ? "No plans match that search" : "No saved plans yet"}</p>
+                <p className="mt-1 text-xs text-muted">
+                  {query ? "Try a different date or detail." : "Build a week, then save it from the plan screen."}
+                </p>
               </div>
             )}
           </section>
