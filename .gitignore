@@ -10,3 +10,4 @@ data/*.json
 *.tsbuildinfo
 .DS_Store
 coverage
+REVIEWER_NOTES.md
