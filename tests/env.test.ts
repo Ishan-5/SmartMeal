@@ -12,10 +12,11 @@ const keys = [
   "ADMIN_TOKEN",
 ] as const;
 
-const original = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+const env = process.env as Record<string, string | undefined>;
+const original = Object.fromEntries(keys.map((key) => [key, env[key]]));
 
 function configureProduction() {
-  process.env.NODE_ENV = "production";
+  env.NODE_ENV = "production";
   process.env.APP_URL = "https://smartmeal.vercel.app";
   process.env.SUPABASE_URL = "https://example.supabase.co";
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
@@ -27,8 +28,8 @@ function configureProduction() {
 afterEach(() => {
   for (const key of keys) {
     const value = original[key];
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
+    if (value === undefined) delete env[key];
+    else env[key] = value;
   }
 });
 
