@@ -90,6 +90,17 @@ export function AuthShell({ children, mode }: Props) {
         </aside>
 
         <section aria-label={mode === "login" ? "Log in to SmartMeal" : "Create your SmartMeal account"} className="mx-auto w-full max-w-md">
+          <div className="mb-6 flex items-center justify-between gap-4 lg:hidden">
+            <Link href="/" className="inline-flex items-center gap-2" aria-label="SmartMeal home">
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-moss text-paper shadow-card">
+                <Leaf className="h-[18px] w-[18px]" strokeWidth={2.2} />
+              </span>
+              <span className="font-serif text-xl font-semibold tracking-tight">SmartMeal</span>
+            </Link>
+            <Link href="/app" className="inline-flex items-center gap-1 text-xs font-semibold text-moss hover:underline">
+              Try the demo <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
           {children}
         </section>
       </div>
