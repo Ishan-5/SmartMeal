@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Compass, Sparkles } from "lucide-react";
 
 import { MarketingShell } from "@/components/marketing-shell";
+
+export const metadata: Metadata = {
+  title: "Page not found",
+  description: "That SmartMeal page could not be found.",
+  robots: { index: false, follow: false },
+};
 
 export default function NotFound() {
   return (
