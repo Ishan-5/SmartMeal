@@ -292,4 +292,26 @@ export const db = {
       await localWrite(database);
     });
   },
+
+  /** Remove an account and every record linked to it, including waitlist signups. */
+  async deleteAccount(userId: string, email: string) {
+    const normalised = email.toLowerCase();
+    if (supabaseEnabled) {
+      await Promise.all([
+        sbQuery(`plans?userId=eq.${enc(userId)}`, { method: "DELETE" }),
+        sbQuery(`sessions?userId=eq.${enc(userId)}`, { method: "DELETE" }),
+        sbQuery(`waitlist?email=eq.${enc(normalised)}`, { method: "DELETE" }),
+      ]);
+      await sbQuery(`users?id=eq.${enc(userId)}`, { method: "DELETE" });
+      return;
+    }
+    await locked(async () => {
+      const database = await localRead();
+      database.users = database.users.filter((user) => user.id !== userId);
+      database.sessions = database.sessions.filter((session) => session.userId !== userId);
+      database.plans = database.plans.filter((plan) => plan.userId !== userId);
+      database.waitlist = database.waitlist.filter((entry) => entry.email !== normalised);
+      await localWrite(database);
+    });
+  },
 };
