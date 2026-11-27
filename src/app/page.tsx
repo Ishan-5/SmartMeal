@@ -15,6 +15,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { PreviewCard } from "@/components/preview-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { WaitlistForm } from "@/components/waitlist-form";
@@ -28,12 +29,6 @@ export const metadata: Metadata = pageMeta({
 });
 
 const recognised = ["Eggs", "Spinach", "Chicken", "Greek yogurt"];
-
-const weekPreview = [
-  { day: "Mon", meal: "Lemon chicken bowls", protein: 42 },
-  { day: "Tue", meal: "Herby egg skillet", protein: 31 },
-  { day: "Wed", meal: "Greek yogurt flatbreads", protein: 28 },
-];
 
 const steps = [
   {
@@ -164,21 +159,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="absolute bottom-2 right-2 w-[214px] rounded-3xl border border-moss/10 bg-paper p-4 shadow-soft sm:-bottom-8 sm:-right-8 sm:w-[286px]">
-                <div className="flex items-center justify-between">
-                  <p className="font-serif text-lg text-ink">This week</p>
-                  <span className="rounded-full bg-mint px-2 py-1 text-[10px] font-semibold text-moss">Protein-forward</span>
-                </div>
-                <div className="mt-3 space-y-2.5">
-                  {weekPreview.map((row) => (
-                    <div key={row.day} className="flex items-center gap-2.5">
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-cream text-[10px] font-bold text-moss">{row.day}</span>
-                      <span className="flex-1 truncate text-[12px] font-medium text-ink">{row.meal}</span>
-                      <span className="text-[11px] font-semibold text-clay">{row.protein}g</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <PreviewCard />
             </div>
           </div>
 
