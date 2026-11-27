@@ -19,7 +19,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { formatQuantity } from "@/lib/plan";
-import type { GroceryItem, Household, MealPlan } from "@/lib/types";
+import type { GroceryItem, Household, IngredientCategory, MealPlan } from "@/lib/types";
 import type { AiMode } from "@/lib/ai";
 import { cn, youtubeSearchUrl } from "@/lib/utils";
 
@@ -43,6 +43,17 @@ const categoryColour: Record<string, string> = {
   pantry: "bg-[#B9C6B5]",
 };
 
+const categoryLabel: Record<IngredientCategory, string> = {
+  protein: "Protein",
+  vegetable: "Vegetables",
+  dairy: "Dairy",
+  grain: "Grains",
+  fruit: "Fruit",
+  pantry: "Pantry",
+};
+
+type GroceryFilter = "all" | IngredientCategory;
+
 function groceryKey(item: GroceryItem): string {
   return `${item.name}-${item.unit}`;
 }
@@ -54,8 +65,12 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
   const [saveError, setSaveError] = useState("");
   const [sessionExpired, setSessionExpired] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [category, setCategory] = useState<GroceryFilter>("all");
 
   const planKey = `${plan.summary.days}:${plan.days.map((meal) => meal.recipe.id).join("|")}`;
+  const groceryCategories = Array.from(new Set(plan.groceries.map((item) => item.category ?? "pantry")));
+  const visibleGroceries =
+    category === "all" ? plan.groceries : plan.groceries.filter((item) => (item.category ?? "pantry") === category);
 
   useEffect(() => {
     try {
@@ -65,6 +80,7 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
     } catch {
       setChecked(new Set());
     }
+    setCategory("all");
   }, [planKey]);
 
   function toggleCheck(item: GroceryItem) {
@@ -243,7 +259,10 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="field-label">Grocery list · buy only the gaps</p>
-            <p className="text-xs text-muted">Quantities are scaled for your household.</p>
+            <p className="text-xs text-muted">
+              Quantities are scaled for your household.{" "}
+              <span className="font-semibold text-moss">{checked.size} of {plan.groceries.length} picked up</span>
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {plan.groceries.length > 0 && (
@@ -265,9 +284,40 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
           </div>
         </div>
 
-        {plan.groceries.length ? (
+        {plan.groceries.length > 0 && (
+          <div className="mt-5 flex flex-wrap gap-2" aria-label="Filter grocery list by category">
+            <button
+              type="button"
+              onClick={() => setCategory("all")}
+              aria-pressed={category === "all"}
+              className={cn(
+                "rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors",
+                category === "all" ? "border-moss bg-moss text-paper" : "border-moss/15 bg-paper text-muted hover:border-moss/40 hover:text-moss",
+              )}
+            >
+              All · {plan.groceries.length}
+            </button>
+            {groceryCategories.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setCategory(item)}
+                aria-pressed={category === item}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors",
+                  category === item ? "border-moss bg-moss text-paper" : "border-moss/15 bg-paper text-muted hover:border-moss/40 hover:text-moss",
+                )}
+              >
+                <span className={cn("h-2 w-2 rounded-full", categoryColour[item])} />
+                {categoryLabel[item]} · {plan.groceries.filter((grocery) => (grocery.category ?? "pantry") === item).length}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {visibleGroceries.length ? (
           <div className="mt-4 overflow-hidden rounded-3xl border border-moss/10">
-            {plan.groceries.map((item) => {
+            {visibleGroceries.map((item) => {
               const key = groceryKey(item);
               const done = checked.has(key);
               return (
@@ -292,6 +342,10 @@ export function PlanStep({ plan, household, ingredients, mode, note, user, onBac
                 </button>
               );
             })}
+          </div>
+        ) : plan.groceries.length ? (
+          <div className="mt-4 rounded-3xl bg-mint/60 p-6 text-sm text-moss">
+            Nothing to buy in {categoryLabel[category === "all" ? "pantry" : category]}. Try another category.
           </div>
         ) : (
           <div className="mt-4 rounded-3xl bg-mint/60 p-6 text-sm text-moss">
