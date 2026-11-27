@@ -2,7 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Leaf } from "lucide-react";
 
-export const metadata: Metadata = { title: "Privacy" };
+import { pageMeta } from "@/lib/page-meta";
+
+export const metadata: Metadata = pageMeta({
+  title: "Privacy",
+  description: "What SmartMeal collects, how it is processed and the choices you have.",
+  path: "/privacy",
+});
 
 const sections = [
   {
