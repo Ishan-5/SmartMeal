@@ -10,6 +10,7 @@
   <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="Strict TypeScript" />
   <img src="https://img.shields.io/badge/stack-zero--cost-16A34A?style=for-the-badge" alt="Zero cost stack" />
   <img src="https://img.shields.io/badge/try-no%20signup-F59E0B?style=for-the-badge" alt="No signup needed to try" />
+  <a href="https://github.com/Ishan-5/SmartMeal/actions/workflows/check.yml"><img src="https://github.com/Ishan-5/SmartMeal/actions/workflows/check.yml/badge.svg?branch=main" alt="CI status" /></a>
 </p>
 
 <p>
@@ -118,8 +119,10 @@ Open **http://localhost:3000**. With an empty `.env.local` you get demo recognit
 | --- | --- |
 | `npm run dev` | Local development server |
 | `npm run typecheck` | TypeScript only |
+| `npm test` | Vitest unit tests |
+| `npm run test:watch` | Watch mode while developing |
 | `npm run build` | Production build |
-| `npm run check` | Typecheck + production build |
+| `npm run check` | Typecheck + tests + production build |
 | `npm run db:migrate` | Optional: apply `supabase/schema.sql` from `DATABASE_URL` |
 
 ---
@@ -243,6 +246,7 @@ Everything is optional locally; Supabase is required in production. See `.env.ex
 | `DATABASE_URL` | Only used by `npm run db:migrate` |
 | `DATA_DIR` | Local JSON fallback directory |
 | `ADMIN_TOKEN` | Protects the waitlist CSV export |
+| `LOG_LEVEL` | Structured log level: `debug`, `info`, `warn` or `error` |
 | `NEXT_DIST_DIR` | Internal: allows a production build beside a dev server |
 
 Never commit `.env.local`. `.gitignore` also covers `.env.*.local`.
@@ -258,6 +262,7 @@ Never commit `.env.local`. `.gitignore` also covers `.env.*.local`.
 | `/login`, `/signup` | Accounts for saved plans |
 | `/privacy`, `/terms` | Honest policies for a product that handles photos and email |
 | `/api/status` | Which provider is live for scanning and planning |
+| `/api/health` | Real health check: env, database reachability and AI providers |
 | `/api/admin/waitlist` | CSV export, protected by `ADMIN_TOKEN` |
 
 <details>
@@ -276,7 +281,8 @@ Never commit `.env.local`. `.gitignore` also covers `.env.*.local`.
 | `POST /api/plans` | Cookie | Saves a validated plan |
 | `GET /api/plans/[id]` | Cookie | Reopens a plan owned by the user |
 | `DELETE /api/plans/[id]` | Cookie | Deletes a plan owned by the user |
-| `GET /api/status` | None | Provider health summary |
+| `GET /api/status` | None | Provider configuration summary |
+| `GET /api/health` | None | Database/provider reachability; `503` when degraded |
 | `GET /api/admin/waitlist` | Bearer token | CSV export |
 
 Errors are JSON: `{ "error": "Human-readable message" }`. Rate limits return `429` with `Retry-After`. Browser writes with a foreign `Origin` return `403`.
@@ -295,6 +301,11 @@ src/lib/plan.ts         Plan assembly, grocery math and ingredient aliases
 src/lib/db.ts           Supabase adapter + local JSON fallback
 src/lib/auth.ts         Password hashing and session cookies
 src/lib/rate-limit.ts   In-process abuse protection
+src/lib/env.ts          Production configuration validation
+src/lib/logger.ts       Structured JSON logs with request ids
+src/middleware.ts       Request id propagation
+tests/                  Vitest unit tests
+.github/workflows/       CI: audit, typecheck, tests, build
 supabase/schema.sql     Tables for users, sessions, waitlist and plans
 ```
 
@@ -303,6 +314,9 @@ supabase/schema.sql     Tables for users, sessions, waitlist and plans
 
 - The Supabase **service_role** key stays server-side and is never prefixed with `NEXT_PUBLIC_`. It bypasses RLS, so every query is scoped by `userId` in server code.
 - Session tokens are random 256-bit values; only their SHA-256 digest is stored. Cookies are `httpOnly`, `SameSite=Lax`, secure in production and use the `__Host-` prefix there.
+- Production startup fails fast when `APP_URL` or Supabase configuration is missing or invalid, instead of silently using ephemeral local JSON.
+- Every request receives an `x-request-id`; logs are structured JSON filtered by `LOG_LEVEL`.
+- CI runs a production dependency audit, typecheck, unit tests and a production build on every push and PR.
 - Write endpoints reject cross-site browser requests whose `Origin` does not match the app host. Requests without an Origin (curl, server-to-server) still work.
 - Rate limits are best-effort and in-memory: 30 scans/plans, 10 signups/waitlist entries and 20 logins per hour per process. They are not a distributed guarantee on serverless.
 - External AI calls have `AbortSignal` timeouts and skip the second vision model when the first fails with a fatal 4xx error, so bad keys do not waste the whole chain.
@@ -331,6 +345,7 @@ supabase/schema.sql     Tables for users, sessions, waitlist and plans
 - [ ] OpenRouter, Groq and Supabase variables added in Vercel
 - [ ] `ADMIN_TOKEN` set to a long random string
 - [ ] `/api/status` reports `live: true` for both providers
+- [ ] `/api/health` returns `200` with `status: "healthy"`
 - [ ] `/api/admin/waitlist` returns CSV with the bearer token
 - [ ] Signup → save plan → reopen plan tested on the deployed URL
 - [ ] `/privacy` and `/terms` reachable from the footer
@@ -341,7 +356,9 @@ supabase/schema.sql     Tables for users, sessions, waitlist and plans
 
 | Symptom | Fix |
 | --- | --- |
+| `/api/health` returns `503` | Check `environment.errors`, `database.ok` and provider keys in the response |
 | `/api/status` says both providers are unavailable | Check key names and restart the dev server or redeploy |
+| Production server exits on startup | `APP_URL` or Supabase env is missing/invalid; fix the Vercel variables |
 | Scan takes ~60s | The primary vision model is busy; the fallback chain is working. Try again later |
 | Plan says “Demo plan” | Groq/OpenRouter quota hit, or no key set; local engine took over |
 | Deployed signup/waitlist fails silently | Supabase env missing or `supabase/schema.sql` not applied |
